@@ -1,20 +1,23 @@
-import { ClassificationResult, OrigamiStyle, AppState } from '../types';
+import { ClassificationResult, OrigamiStyle, AppState, OrigamiLanguage } from '../types';
+import { getTranslation } from '../utils/translations';
 
 const INITIAL_STATE: AppState = {
   status: 'idle',
   previewGroups: [],
+  language: 'ja' // デフォルト
 };
 
 async function getState(): Promise<AppState> {
-  const result = await chrome.storage.local.get('appState');
-  return (result.appState as AppState) || INITIAL_STATE;
+  const result = await chrome.storage.local.get(['appState', 'language']);
+  const state = (result.appState as AppState) || INITIAL_STATE;
+  if (result.language) state.language = result.language as OrigamiLanguage;
+  return state;
 }
 
 async function updateState(partialState: Partial<AppState>) {
   const currentState = await getState();
   const newState = { ...currentState, ...partialState };
   await chrome.storage.local.set({ appState: newState });
-  // ポップアップが開いている場合に通知（エラーは無視）
   chrome.runtime.sendMessage({ type: 'STATE_UPDATED', state: newState }).catch(() => {});
 }
 
@@ -54,17 +57,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function startOrganizeTabs(style: OrigamiStyle) {
+  const state = await getState();
   await updateState({ status: 'analyzing', style, error: undefined, previewGroups: [] });
   
   try {
-    const result = await handleOrganizeTabs(style);
+    const result = await handleOrganizeTabs(style, state.language);
     await updateState({ status: 'preview', previewGroups: result });
   } catch (err: any) {
     await updateState({ status: 'idle', error: err.message });
   }
 }
 
-async function handleOrganizeTabs(style: OrigamiStyle): Promise<ClassificationResult[]> {
+async function handleOrganizeTabs(style: OrigamiStyle, lang: OrigamiLanguage): Promise<ClassificationResult[]> {
   const tabs = await chrome.tabs.query({ currentWindow: true });
   const tabData = tabs.map(t => ({ id: t.id, title: t.title, url: t.url }));
 
@@ -73,11 +77,11 @@ async function handleOrganizeTabs(style: OrigamiStyle): Promise<ClassificationRe
   const modelName = typeof result.geminiModelName === 'string' ? result.geminiModelName.trim() : "gemini-2.5-flash";
   
   if (!geminiApiKey) {
-    throw new Error("APIキーが設定されていません。オプション画面から設定してください。");
+    throw new Error(lang === 'ja' ? "APIキーが設定されていません。" : "API Key is not set.");
   }
 
-  const prompt = constructPrompt(style, tabData);
-  const systemInstruction = "あなたはブラウザのタブを整理する専門家です。与えられたタブのリストを、指定されたスタイルに従ってJSON配列形式で分類してください。返却はJSON配列のみとし、説明文やMarkdownの装飾は一切含めないでください。形式: [{ \"groupName\": \"グループ名\", \"tabIds\": [1, 2, ...] }]";
+  const prompt = constructPrompt(style, tabData, lang);
+  const systemInstruction = getTranslation(lang, 'aiSystemInstruction');
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`, {
@@ -98,23 +102,11 @@ async function handleOrganizeTabs(style: OrigamiStyle): Promise<ClassificationRe
     const data = await response.json();
 
     if (data.error) {
-      let availableModels = "取得失敗";
-      try {
-        const listResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`);
-        const listData = await listResponse.json();
-        availableModels = listData.models
-          ?.filter((m: any) => m.supportedGenerationMethods.includes("generateContent"))
-          .map((m: any) => m.name.replace('models/', ''))
-          .join(', ') || "none";
-      } catch (e) {
-        availableModels = "APIキーが無効、または通信エラーです。";
-      }
-
-      throw new Error(`${data.error.message} (Model: ${modelName}, Code: ${data.error.code})\n\n【利用可能なモデル一覧】\n${availableModels}`);
+      throw new Error(`${data.error.message}`);
     }
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error("AIからの応答が空でした。");
+    if (!text) throw new Error("AI response was empty.");
 
     return JSON.parse(text);
   } catch (error) {
@@ -123,42 +115,35 @@ async function handleOrganizeTabs(style: OrigamiStyle): Promise<ClassificationRe
   }
 }
 
-function constructPrompt(style: OrigamiStyle, tabs: any[]): string {
+function constructPrompt(style: OrigamiStyle, tabs: any[], lang: OrigamiLanguage): string {
   const tabList = tabs.map(t => `ID:${t.id}, Title:${t.title}, URL:${t.url}`).join('\n');
   
   let styleInstruction = "";
   switch (style) {
-    case 'auto':
-      styleInstruction = "タブのタイトルとURLから、最適なグループ名を考えて分類してください。";
-      break;
-    case 'task':
-      styleInstruction = "タブを「現在進行中のメインタスク（調査・開発）」、「リファレンス（後で読む資料）」、「無関係なノイズ（SNSや動画）」の3つのグループに分類してください。";
-      break;
-    case 'work-life':
-      styleInstruction = "タブを「仕事・開発関連」と「趣味・プライベート関連」の2つのグループに分類してください。";
-      break;
-    case 'triage':
-      styleInstruction = "「保存すべき重要タブ」と「閉じてよさそうな不要なタブ」の2つのグループに分類してください。不要なタブのグループ名は「断捨離」としてください。";
-      break;
+    case 'auto': styleInstruction = getTranslation(lang, 'aiStyleAuto'); break;
+    case 'task': styleInstruction = getTranslation(lang, 'aiStyleTask'); break;
+    case 'work-life': styleInstruction = getTranslation(lang, 'aiStyleWorkLife'); break;
+    case 'triage': styleInstruction = getTranslation(lang, 'aiStyleTriage'); break;
   }
 
-  const commonInstruction = `
-- 「新しいタブ」ページ（Titleが"New Tab"や"新しいタブ"のもの、またはURLが"chrome://newtab/"のもの）は、一律で「断捨離」というグループ名に分類してください。これらは実行時に自動的に閉じられます。
-- 同じドメイン（ホスト名）のタブは、可能な限り同じグループにまとめるか、連続したグループになるように整理してください。`;
+  const commonInstruction = getTranslation(lang, 'aiCommonInstruction');
 
-  return `以下のタブを分類ルールに従って分類し、JSON配列で返してください。
+  return `${getTranslation(lang, 'aiPromptHeader')}
 
-【共通ルール】
+${getTranslation(lang, 'aiRuleHeader')}
 ${commonInstruction}
 
-【スタイル別ルール: ${style}】
+${getTranslation(lang, 'aiStyleHeader').replace('{style}', style)}
 ${styleInstruction}
 
-【タブリスト】
+${getTranslation(lang, 'aiTabListHeader')}
 ${tabList}`;
 }
 
 async function handleExecuteOrganize(groups: ClassificationResult[]) {
+  const state = await getState();
+  const cleanupGroupName = getTranslation(state.language, 'aiDanshari');
+
   await updateState({ status: 'executing' });
   try {
     const currentTabs = await chrome.tabs.query({ currentWindow: true });
@@ -175,7 +160,7 @@ async function handleExecuteOrganize(groups: ClassificationResult[]) {
       const validTabIds = group.tabIds.filter((id): id is number => typeof id === 'number');
       if (validTabIds.length === 0) continue;
 
-      if (group.groupName === '断捨離') {
+      if (group.groupName === cleanupGroupName) {
         await chrome.tabs.remove(validTabIds);
       } else {
         const groupId = await chrome.tabs.group({ tabIds: validTabIds as any });
@@ -185,7 +170,7 @@ async function handleExecuteOrganize(groups: ClassificationResult[]) {
     await updateState({ status: 'idle', previewGroups: [] });
     return { success: true };
   } catch (err: any) {
-    await updateState({ status: 'preview', error: `実行エラー: ${err.message}` });
+    await updateState({ status: 'preview', error: `Error: ${err.message}` });
     return { success: false, error: err.message };
   }
 }

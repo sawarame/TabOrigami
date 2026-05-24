@@ -1,5 +1,6 @@
 export type OrigamiStyle = 'auto' | 'task' | 'work-life' | 'triage';
 export type OrigamiStatus = 'idle' | 'analyzing' | 'preview' | 'executing';
+export type OrigamiLanguage = 'ja' | 'en';
 
 export interface ClassificationResult {
   groupName: string;
@@ -18,4 +19,5 @@ export interface AppState {
   style?: OrigamiStyle;
   previewGroups: ClassificationResult[];
   error?: string;
+  language: OrigamiLanguage;
 }

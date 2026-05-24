@@ -1,12 +1,12 @@
 <template>
   <div class="options-container">
-    <h1>🕊️ TabOrigami 設定</h1>
+    <h1>{{ t('optionsTitle') }}</h1>
     <section>
-      <h2>Gemini API 設定</h2>
-      <p>この拡張機能を使用するには、Google AI Studio で取得した API キーが必要です。</p>
+      <h2>{{ t('apiSettings') }}</h2>
+      <p>{{ t('helpApiKey') }}</p>
       
       <div class="field">
-        <label for="api-key">Gemini API Key:</label>
+        <label for="api-key">{{ t('apiKeyLabel') }}</label>
         <input 
           id="api-key" 
           v-model="apiKey" 
@@ -16,7 +16,7 @@
       </div>
 
       <div class="field">
-        <label for="model-name">使用するモデル名:</label>
+        <label for="model-name">{{ t('modelLabel') }}</label>
         <input 
           id="model-name" 
           v-model="modelName" 
@@ -28,13 +28,21 @@
         </p>
       </div>
 
+      <div class="field">
+        <label for="language">{{ t('languageLabel') }}</label>
+        <select id="language" v-model="language">
+          <option value="ja">日本語 (Japanese)</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+
       <div class="actions">
-        <button @click="save" class="btn-save">保存</button>
-        <span v-if="saved" class="status-msg">保存しました！</span>
+        <button @click="save" class="btn-save">{{ t('save') }}</button>
+        <span v-if="saved" class="status-msg">{{ t('saved') }}</span>
       </div>
 
       <p class="help">
-        APIキーをお持ちでない場合は、<a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> で無料で作成できます。
+        <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>
       </p>
     </section>
   </div>
@@ -42,26 +50,46 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { OrigamiLanguage } from '../types';
+import { getTranslation, TranslationKey } from '../utils/translations';
 
 const apiKey = ref('');
 const modelName = ref('gemini-2.5-flash');
+const language = ref<OrigamiLanguage>('ja');
 const saved = ref(false);
 
+const t = (key: TranslationKey) => getTranslation(language.value, key);
+
 onMounted(async () => {
-  const result = await chrome.storage.local.get(['geminiApiKey', 'geminiModelName']);
+  const result = await chrome.storage.local.get(['geminiApiKey', 'geminiModelName', 'language']);
   if (typeof result.geminiApiKey === 'string') {
     apiKey.value = result.geminiApiKey;
   }
   if (typeof result.geminiModelName === 'string') {
     modelName.value = result.geminiModelName;
   }
+  if (result.language) {
+    language.value = result.language as OrigamiLanguage;
+  } else {
+    // デフォルト言語の判定
+    const uiLang = chrome.i18n.getUILanguage();
+    language.value = uiLang.startsWith('ja') ? 'ja' : 'en';
+  }
 });
 
 const save = async () => {
   await chrome.storage.local.set({ 
     geminiApiKey: apiKey.value,
-    geminiModelName: modelName.value
+    geminiModelName: modelName.value,
+    language: language.value
   });
+  
+  // Backgroundの状態も更新
+  const { appState } = await chrome.storage.local.get('appState');
+  if (appState) {
+    await chrome.storage.local.set({ appState: { ...appState, language: language.value } });
+  }
+
   saved.value = true;
   setTimeout(() => {
     saved.value = false;
@@ -97,7 +125,7 @@ label {
   margin-bottom: 8px;
   font-weight: bold;
 }
-input {
+input, select {
   width: 100%;
   padding: 10px;
   border: 1px solid #ddd;

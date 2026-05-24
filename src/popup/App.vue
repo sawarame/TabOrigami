@@ -1,25 +1,25 @@
 <template>
   <div class="container">
     <header>
-      <h1>🕊️ TabOrigami</h1>
+      <h1>{{ t('title') }}</h1>
     </header>
 
     <!-- エラー表示 -->
     <div v-if="appState.error" class="error-box">
       <p>{{ appState.error }}</p>
-      <button @click="clearError" class="btn-secondary">閉じる</button>
+      <button @click="clearError" class="btn-secondary">{{ t('close') }}</button>
     </div>
 
     <!-- 解析中・実行中 -->
     <div v-if="appState.status === 'analyzing' || appState.status === 'executing'" class="loading">
       <div class="spinner"></div>
       <p>{{ loadingMessage }}</p>
-      <button v-if="appState.status === 'analyzing'" @click="cancel" class="btn-secondary btn-small">キャンセル</button>
+      <button v-if="appState.status === 'analyzing'" @click="cancel" class="btn-secondary btn-small">{{ t('cancel') }}</button>
     </div>
 
     <!-- 初期状態 -->
     <div v-else-if="appState.status === 'idle'">
-      <p class="description">折り方を選んで、タブを綺麗に整理しましょう。</p>
+      <p class="description">{{ t('description') }}</p>
       <div class="style-grid">
         <button v-for="style in styles" :key="style.id" @click="analyze(style.id)" class="style-card">
           <span class="icon">{{ style.icon }}</span>
@@ -27,13 +27,13 @@
         </button>
       </div>
       <div v-if="hasUndo" class="undo-section">
-        <button @click="undo" class="btn-undo">直前の整理を元に戻す (Undo)</button>
+        <button @click="undo" class="btn-undo">{{ t('undo') }}</button>
       </div>
     </div>
 
     <!-- プレビュー -->
     <div v-else-if="appState.status === 'preview'" class="preview-area">
-      <h2>整理のプレビュー</h2>
+      <h2>{{ t('previewTitle') }}</h2>
       <div v-for="(group, gIdx) in appState.previewGroups" :key="gIdx" class="group-card">
         <h3>{{ group.groupName }}</h3>
         <ul>
@@ -46,8 +46,8 @@
         </ul>
       </div>
       <div class="actions">
-        <button @click="cancel" class="btn-secondary">キャンセル</button>
-        <button @click="execute" class="btn-primary">実行する</button>
+        <button @click="cancel" class="btn-secondary">{{ t('cancel') }}</button>
+        <button @click="execute" class="btn-primary">{{ t('execute') }}</button>
       </div>
     </div>
   </div>
@@ -55,26 +55,30 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { OrigamiStyle, AppState } from '../types';
-
-const styles = [
-  { id: 'auto' as OrigamiStyle, name: 'おまかせ折り', icon: '✨' },
-  { id: 'task' as OrigamiStyle, name: 'タスク集中折り', icon: '💻' },
-  { id: 'work-life' as OrigamiStyle, name: 'オン・オフ折り', icon: '🏕️' },
-  { id: 'triage' as OrigamiStyle, name: '断捨離折り', icon: '🧹' },
-];
+import { OrigamiStyle, AppState, OrigamiLanguage } from '../types';
+import { getTranslation, TranslationKey } from '../utils/translations';
 
 const appState = ref<AppState>({
   status: 'idle',
   previewGroups: [],
+  language: 'ja',
 });
+
+const t = (key: TranslationKey) => getTranslation(appState.value.language, key);
+
+const styles = computed(() => [
+  { id: 'auto' as OrigamiStyle, name: t('styleAuto'), icon: '✨' },
+  { id: 'task' as OrigamiStyle, name: t('styleTask'), icon: '💻' },
+  { id: 'work-life' as OrigamiStyle, name: t('styleWorkLife'), icon: '🏕️' },
+  { id: 'triage' as OrigamiStyle, name: t('styleTriage'), icon: '🧹' },
+]);
 
 const allTabs = ref<chrome.tabs.Tab[]>([]);
 const hasUndo = ref(false);
 
 const loadingMessage = computed(() => {
-  if (appState.value.status === 'analyzing') return 'AIがタブの内容を読み取っています...';
-  if (appState.value.status === 'executing') return 'タブを整理しています...';
+  if (appState.value.status === 'analyzing') return t('analyzing');
+  if (appState.value.status === 'executing') return t('executing');
   return '';
 });
 
@@ -84,7 +88,13 @@ onMounted(async () => {
     chrome.runtime.sendMessage({ type: 'GET_STATE' }),
     chrome.runtime.sendMessage({ type: 'GET_TABS' })
   ]);
-  appState.value = state;
+  
+  // ストレージから言語設定を取得して補完
+  const { language } = await chrome.storage.local.get('language');
+  appState.value = { 
+    ...state, 
+    language: language || state.language || (chrome.i18n.getUILanguage().startsWith('ja') ? 'ja' : 'en')
+  };
   allTabs.value = tabs;
 
   const { lastSnapshot } = await chrome.storage.local.get('lastSnapshot');
@@ -93,14 +103,13 @@ onMounted(async () => {
   // 状態更新のリスナー
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'STATE_UPDATED') {
-      appState.value = message.state;
-      // 完了した場合は閉じるなどの処理（任意）
+      appState.value = { ...message.state, language: appState.value.language };
     }
   });
 });
 
 const getTabTitle = (id: number | undefined) => {
-  return allTabs.value.find(t => t.id === id)?.title || '不明なタブ';
+  return allTabs.value.find(t => t.id === id)?.title || t('unknownTab');
 };
 
 const analyze = async (style: OrigamiStyle) => {
@@ -117,9 +126,7 @@ const clearError = () => {
 };
 
 const toggleTab = (gIdx: number, tIdx: number) => {
-  // プレビューの個別調整は今後の課題（現状は全選択を前提とするが、
-  // UI上はチェックボックスが表示されているため、可能であれば連動させたい）
-  // ここではappState.previewGroupsを直接いじってBackgroundへ反映させる必要がある
+  // TODO: 選択解除の実装
 };
 
 const execute = async () => {
@@ -128,13 +135,13 @@ const execute = async () => {
 };
 
 const undo = async () => {
-  appState.value.status = 'executing'; // 一時的にローディング表示
+  appState.value.status = 'executing';
   try {
     await chrome.runtime.sendMessage({ type: 'UNDO' });
     allTabs.value = await chrome.runtime.sendMessage({ type: 'GET_TABS' });
     hasUndo.value = false;
   } catch (e) {
-    alert('Undoに失敗しました。');
+    alert('Undo failed.');
   } finally {
     appState.value.status = 'idle';
   }
