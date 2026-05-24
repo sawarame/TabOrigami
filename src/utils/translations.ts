@@ -13,6 +13,7 @@ export const translations = {
     undo: '直前の整理を元に戻す (Undo)',
     unknownTab: '不明なタブ',
     close: '閉じる',
+    settings: '設定',
     // Styles
     styleAuto: 'おまかせ折り',
     styleTask: 'タスク集中折り',
@@ -54,6 +55,7 @@ export const translations = {
     undo: 'Undo last organization',
     unknownTab: 'Unknown Tab',
     close: 'Close',
+    settings: 'Settings',
     // Styles
     styleAuto: 'Auto Fold',
     styleTask: 'Task Focus Fold',

@@ -2,6 +2,7 @@
   <div class="container">
     <header>
       <h1>{{ t('title') }}</h1>
+      <button @click="openOptions" class="btn-settings" :title="t('settings')">⚙️</button>
     </header>
 
     <!-- エラー表示 -->
@@ -116,6 +117,10 @@ const analyze = async (style: OrigamiStyle) => {
   await chrome.runtime.sendMessage({ type: 'ORGANIZE_TABS', style });
 };
 
+const openOptions = () => {
+  chrome.runtime.openOptionsPage();
+};
+
 const cancel = async () => {
   await chrome.runtime.sendMessage({ type: 'CANCEL' });
 };
@@ -154,10 +159,28 @@ const undo = async () => {
   min-width: 320px;
   padding: 16px;
 }
+header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin-bottom: 16px;
+}
 header h1 {
   font-size: 1.2rem;
-  margin-bottom: 16px;
-  text-align: center;
+  margin: 0;
+}
+.btn-settings {
+  position: absolute;
+  right: 0;
+  background: transparent;
+  padding: 4px;
+  font-size: 1.1rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.btn-settings:hover {
+  opacity: 1;
 }
 .description {
   font-size: 0.9rem;
