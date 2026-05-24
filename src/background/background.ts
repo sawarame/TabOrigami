@@ -88,25 +88,38 @@ async function handleOrganizeTabs(style: OrigamiStyle): Promise<ClassificationRe
 }
 
 function constructPrompt(style: OrigamiStyle, tabs: any[]): string {
-  const tabList = tabs.map(t => `ID:${t.id}, Title:${t.title}`).join('\n');
+  const tabList = tabs.map(t => `ID:${t.id}, Title:${t.title}, URL:${t.url}`).join('\n');
   
-  let instruction = "";
+  let styleInstruction = "";
   switch (style) {
     case 'auto':
-      instruction = "タブの内容を読み取り、最適なグループ名を自分で考えて分類してください。";
+      styleInstruction = "タブのタイトルとURLから、最適なグループ名を考えて分類してください。";
       break;
     case 'task':
-      instruction = "「現在のメイン作業」と「後で読む／ノイズ」の2つのグループに分類してください。";
+      styleInstruction = "タブを「現在進行中のメインタスク（調査・開発）」、「リファレンス（後で読む資料）」、「無関係なノイズ（SNSや動画）」の3つのグループに分類してください。";
       break;
     case 'work-life':
-      instruction = "「仕事・開発関連」と「趣味・プライベート関連」の2つのグループに分類してください。";
+      styleInstruction = "タブを「仕事・開発関連」と「趣味・プライベート関連」の2つのグループに分類してください。";
       break;
     case 'triage':
-      instruction = "「保存すべき重要タブ」と「閉じてよさそうな不要なタブ」の2つのグループに分類してください。不要なタブのグループ名は「断捨離」としてください。";
+      styleInstruction = "「保存すべき重要タブ」と「閉じてよさそうな不要なタブ」の2つのグループに分類してください。不要なタブのグループ名は「断捨離」としてください。";
       break;
   }
 
-  return `以下のタブを分類ルールに従って分類し、JSON配列で返してください。\n\n【分類ルール】\n${instruction}\n\n【タブリスト】\n${tabList}`;
+  const commonInstruction = `
+- 「新しいタブ」ページ（Titleが"New Tab"や"新しいタブ"のもの、またはURLが"chrome://newtab/"のもの）は、一律で「断捨離」というグループ名に分類してください。これらは実行時に自動的に閉じられます。
+- 同じドメイン（ホスト名）のタブは、可能な限り同じグループにまとめるか、連続したグループになるように整理してください。`;
+
+  return `以下のタブを分類ルールに従って分類し、JSON配列で返してください。
+
+【共通ルール】
+${commonInstruction}
+
+【スタイル別ルール: ${style}】
+${styleInstruction}
+
+【タブリスト】
+${tabList}`;
 }
 
 async function handleExecuteOrganize(groups: ClassificationResult[]) {
