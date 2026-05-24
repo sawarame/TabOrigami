@@ -70,11 +70,18 @@ async function startOrganizeTabs(style: OrigamiStyle) {
 
 async function handleOrganizeTabs(style: OrigamiStyle, lang: OrigamiLanguage): Promise<ClassificationResult[]> {
   const tabs = await chrome.tabs.query({ currentWindow: true });
-  const tabData = tabs.map(t => ({ id: t.id, title: t.title, url: t.url }));
 
-  const result = await chrome.storage.local.get(['geminiApiKey', 'geminiModelName']);
+  const result = await chrome.storage.local.get(['geminiApiKey', 'geminiModelName', 'excludePinnedTabs']);
   const geminiApiKey = typeof result.geminiApiKey === 'string' ? result.geminiApiKey.trim() : null;
   const modelName = typeof result.geminiModelName === 'string' ? result.geminiModelName.trim() : "gemini-2.5-flash";
+  const excludePinned = result.excludePinnedTabs === true;
+
+  let targetTabs = tabs;
+  if (excludePinned) {
+    targetTabs = tabs.filter(t => !t.pinned);
+  }
+
+  const tabData = targetTabs.map(t => ({ id: t.id, title: t.title, url: t.url }));
   
   if (!geminiApiKey) {
     throw new Error(lang === 'ja' ? "APIキーが設定されていません。" : "API Key is not set.");

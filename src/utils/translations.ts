@@ -27,6 +27,7 @@ export const translations = {
     saved: '保存しました！',
     languageLabel: '表示言語 (Language):',
     helpApiKey: 'APIキーをお持ちでない場合は、Google AI Studio で無料で作成できます。',
+    excludePinnedLabel: '固定されたタブを整理の対象外にする',
     // Background / AI
     aiSystemInstruction: 'あなたはブラウザのタブを整理する専門家です。与えられたタブのリストを、指定されたスタイルに従ってJSON配列形式で分類してください。返却はJSON配列のみとし、説明文やMarkdownの装飾は一切含めないでください。形式: [{ "groupName": "グループ名", "tabIds": [1, 2, ...] }]',
     aiStyleAuto: 'タブのタイトルとURLから、最適なグループ名を考えて分類してください。',
@@ -66,6 +67,7 @@ export const translations = {
     saved: 'Saved!',
     languageLabel: 'Language:',
     helpApiKey: 'If you don\'t have an API key, you can create one for free at Google AI Studio.',
+    excludePinnedLabel: 'Exclude pinned tabs from organization',
     // Background / AI
     aiSystemInstruction: 'You are an expert at organizing browser tabs. Classify the given list of tabs into a JSON array format according to the specified style. Return only the JSON array, without any explanation or Markdown decoration. Format: [{ "groupName": "Group Name", "tabIds": [1, 2, ...] }]',
     aiStyleAuto: 'Create optimal group names based on tab titles and URLs.',

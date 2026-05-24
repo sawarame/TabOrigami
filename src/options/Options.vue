@@ -37,6 +37,13 @@
         </select>
       </div>
 
+      <div class="field checkbox-field">
+        <label>
+          <input type="checkbox" v-model="excludePinnedTabs" />
+          {{ t('excludePinnedLabel') }}
+        </label>
+      </div>
+
       <div class="actions">
         <button @click="save" class="btn-save">{{ t('save') }}</button>
         <span v-if="saved" class="status-msg">{{ t('saved') }}</span>
@@ -57,12 +64,13 @@ import { getTranslation, TranslationKey } from '../utils/translations';
 const apiKey = ref('');
 const modelName = ref('gemini-2.5-flash');
 const language = ref<OrigamiLanguage>('ja');
+const excludePinnedTabs = ref(false);
 const saved = ref(false);
 
 const t = (key: TranslationKey) => getTranslation(language.value, key);
 
 onMounted(async () => {
-  const result = await chrome.storage.local.get(['geminiApiKey', 'geminiModelName', 'language']);
+  const result = await chrome.storage.local.get(['geminiApiKey', 'geminiModelName', 'language', 'excludePinnedTabs']);
   if (typeof result.geminiApiKey === 'string') {
     apiKey.value = result.geminiApiKey;
   }
@@ -76,13 +84,17 @@ onMounted(async () => {
     const uiLang = chrome.i18n.getUILanguage();
     language.value = uiLang.startsWith('ja') ? 'ja' : 'en';
   }
+  if (typeof result.excludePinnedTabs === 'boolean') {
+    excludePinnedTabs.value = result.excludePinnedTabs;
+  }
 });
 
 const save = async () => {
   await chrome.storage.local.set({ 
     geminiApiKey: apiKey.value,
     geminiModelName: modelName.value,
-    language: language.value
+    language: language.value,
+    excludePinnedTabs: excludePinnedTabs.value
   });
   
   // Backgroundの状態も更新
@@ -120,6 +132,21 @@ h2 {
 }
 .field {
   margin: 16px 0;
+}
+.checkbox-field {
+  display: flex;
+  align-items: center;
+}
+.checkbox-field label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+.checkbox-field input {
+  width: auto;
+  margin: 0;
 }
 label {
   display: block;
