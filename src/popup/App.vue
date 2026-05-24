@@ -7,8 +7,18 @@
 
     <!-- エラー表示 -->
     <div v-if="appState.error" class="error-box">
-      <p>{{ appState.error }}</p>
-      <button @click="clearError" class="btn-secondary">{{ t('close') }}</button>
+      <template v-if="appState.error === 'MISSING_API_KEY'">
+        <h3>{{ t('missingApiKeyTitle') }}</h3>
+        <p>{{ t('missingApiKeyDescription') }}</p>
+        <div class="error-actions">
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link-external">Google AI Studio ↗</a>
+          <button @click="openOptions" class="btn-primary btn-small">{{ t('settings') }}</button>
+        </div>
+      </template>
+      <template v-else>
+        <p>{{ appState.error }}</p>
+        <button @click="clearError" class="btn-secondary">{{ t('close') }}</button>
+      </template>
     </div>
 
     <!-- 解析中・実行中 -->
@@ -245,6 +255,28 @@ header h1 {
   padding: 12px;
   margin-bottom: 16px;
   font-size: 0.85rem;
+}
+.error-box h3 {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+}
+.error-box p {
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+.error-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.link-external {
+  color: #3498db;
+  text-decoration: none;
+  font-weight: bold;
+}
+.link-external:hover {
+  text-decoration: underline;
 }
 .preview-area h2 {
   font-size: 1rem;

@@ -84,7 +84,7 @@ async function handleOrganizeTabs(style: OrigamiStyle, lang: OrigamiLanguage): P
   const tabData = targetTabs.map(t => ({ id: t.id, title: t.title, url: t.url }));
   
   if (!geminiApiKey) {
-    throw new Error(lang === 'ja' ? "APIキーが設定されていません。" : "API Key is not set.");
+    throw new Error("MISSING_API_KEY");
   }
 
   const prompt = constructPrompt(style, tabData, lang);

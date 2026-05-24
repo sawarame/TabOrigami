@@ -14,6 +14,8 @@ export const translations = {
     unknownTab: '不明なタブ',
     close: '閉じる',
     settings: '設定',
+    missingApiKeyTitle: 'APIキーが必要です',
+    missingApiKeyDescription: 'Google AI Studio で APIキーを取得し、設定画面で入力してください。',
     // Styles
     styleAuto: 'おまかせ折り',
     styleTask: 'タスク集中折り',
@@ -56,6 +58,8 @@ export const translations = {
     unknownTab: 'Unknown Tab',
     close: 'Close',
     settings: 'Settings',
+    missingApiKeyTitle: 'API Key Required',
+    missingApiKeyDescription: 'Please obtain an API key from Google AI Studio and enter it in the settings.',
     // Styles
     styleAuto: 'Auto Fold',
     styleTask: 'Task Focus Fold',
