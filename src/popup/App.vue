@@ -4,12 +4,21 @@
       <h1>🕊️ TabOrigami</h1>
     </header>
 
-    <div v-if="loading" class="loading">
-      <div class="spinner"></div>
-      <p>AIがタブの内容を読み取っています...</p>
+    <!-- エラー表示 -->
+    <div v-if="appState.error" class="error-box">
+      <p>{{ appState.error }}</p>
+      <button @click="clearError" class="btn-secondary">閉じる</button>
     </div>
 
-    <div v-else-if="!previewGroups.length">
+    <!-- 解析中・実行中 -->
+    <div v-if="appState.status === 'analyzing' || appState.status === 'executing'" class="loading">
+      <div class="spinner"></div>
+      <p>{{ loadingMessage }}</p>
+      <button v-if="appState.status === 'analyzing'" @click="cancel" class="btn-secondary btn-small">キャンセル</button>
+    </div>
+
+    <!-- 初期状態 -->
+    <div v-else-if="appState.status === 'idle'">
       <p class="description">折り方を選んで、タブを綺麗に整理しましょう。</p>
       <div class="style-grid">
         <button v-for="style in styles" :key="style.id" @click="analyze(style.id)" class="style-card">
@@ -22,9 +31,10 @@
       </div>
     </div>
 
-    <div v-else class="preview-area">
+    <!-- プレビュー -->
+    <div v-else-if="appState.status === 'preview'" class="preview-area">
       <h2>整理のプレビュー</h2>
-      <div v-for="(group, gIdx) in previewGroups" :key="gIdx" class="group-card">
+      <div v-for="(group, gIdx) in appState.previewGroups" :key="gIdx" class="group-card">
         <h3>{{ group.groupName }}</h3>
         <ul>
           <li v-for="(tabId, tIdx) in group.tabIds" :key="tIdx">
@@ -36,7 +46,7 @@
         </ul>
       </div>
       <div class="actions">
-        <button @click="previewGroups = []" class="btn-secondary">キャンセル</button>
+        <button @click="cancel" class="btn-secondary">キャンセル</button>
         <button @click="execute" class="btn-primary">実行する</button>
       </div>
     </div>
@@ -44,8 +54,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { OrigamiStyle, ClassificationResult } from '../types';
+import { ref, onMounted, computed } from 'vue';
+import { OrigamiStyle, AppState } from '../types';
 
 const styles = [
   { id: 'auto' as OrigamiStyle, name: 'おまかせ折り', icon: '✨' },
@@ -54,15 +64,39 @@ const styles = [
   { id: 'triage' as OrigamiStyle, name: '断捨離折り', icon: '🧹' },
 ];
 
-const loading = ref(false);
-const previewGroups = ref<ClassificationResult[]>([]);
+const appState = ref<AppState>({
+  status: 'idle',
+  previewGroups: [],
+});
+
 const allTabs = ref<chrome.tabs.Tab[]>([]);
 const hasUndo = ref(false);
 
+const loadingMessage = computed(() => {
+  if (appState.value.status === 'analyzing') return 'AIがタブの内容を読み取っています...';
+  if (appState.value.status === 'executing') return 'タブを整理しています...';
+  return '';
+});
+
 onMounted(async () => {
-  allTabs.value = await chrome.runtime.sendMessage({ type: 'GET_TABS' });
+  // 初回状態取得
+  const [state, tabs] = await Promise.all([
+    chrome.runtime.sendMessage({ type: 'GET_STATE' }),
+    chrome.runtime.sendMessage({ type: 'GET_TABS' })
+  ]);
+  appState.value = state;
+  allTabs.value = tabs;
+
   const { lastSnapshot } = await chrome.storage.local.get('lastSnapshot');
   hasUndo.value = !!lastSnapshot;
+
+  // 状態更新のリスナー
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === 'STATE_UPDATED') {
+      appState.value = message.state;
+      // 完了した場合は閉じるなどの処理（任意）
+    }
+  });
 });
 
 const getTabTitle = (id: number | undefined) => {
@@ -70,42 +104,31 @@ const getTabTitle = (id: number | undefined) => {
 };
 
 const analyze = async (style: OrigamiStyle) => {
-  loading.value = true;
-  try {
-    const result = await chrome.runtime.sendMessage({ type: 'ORGANIZE_TABS', style });
-    if (result.error) {
-      alert(`エラー: ${result.error}`);
-      if (result.error.includes('APIキー')) {
-        chrome.runtime.openOptionsPage();
-      }
-      return;
-    }
-    previewGroups.value = result;
-  } catch (e) {
-    alert('解析中に予期せぬエラーが発生しました。');
-  } finally {
-    loading.value = false;
-  }
+  await chrome.runtime.sendMessage({ type: 'ORGANIZE_TABS', style });
+};
+
+const cancel = async () => {
+  await chrome.runtime.sendMessage({ type: 'CANCEL' });
+};
+
+const clearError = () => {
+  appState.value.error = undefined;
+  chrome.storage.local.set({ appState: appState.value });
 };
 
 const toggleTab = (gIdx: number, tIdx: number) => {
-  // 簡易的な実装: チェックが外れたらそのタブIDを削除（または別の場所に避ける必要があるが、今回は単純化）
-  // 実際にはUI上で選択解除されたものを除外して実行に渡す
+  // プレビューの個別調整は今後の課題（現状は全選択を前提とするが、
+  // UI上はチェックボックスが表示されているため、可能であれば連動させたい）
+  // ここではappState.previewGroupsを直接いじってBackgroundへ反映させる必要がある
 };
 
 const execute = async () => {
-  loading.value = true;
-  try {
-    await chrome.runtime.sendMessage({ type: 'EXECUTE_ORGANIZE', groups: previewGroups.value });
-    window.close();
-  } catch (e) {
-    alert('整理の実行に失敗しました。');
-    loading.value = false;
-  }
+  await chrome.runtime.sendMessage({ type: 'EXECUTE_ORGANIZE', groups: appState.value.previewGroups });
+  window.close();
 };
 
 const undo = async () => {
-  loading.value = true;
+  appState.value.status = 'executing'; // 一時的にローディング表示
   try {
     await chrome.runtime.sendMessage({ type: 'UNDO' });
     allTabs.value = await chrome.runtime.sendMessage({ type: 'GET_TABS' });
@@ -113,7 +136,7 @@ const undo = async () => {
   } catch (e) {
     alert('Undoに失敗しました。');
   } finally {
-    loading.value = false;
+    appState.value.status = 'idle';
   }
 };
 </script>
@@ -121,6 +144,8 @@ const undo = async () => {
 <style scoped>
 .container {
   color: #333;
+  min-width: 320px;
+  padding: 16px;
 }
 header h1 {
   font-size: 1.2rem;
@@ -176,6 +201,20 @@ header h1 {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+.btn-small {
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  margin-top: 12px;
+}
+.error-box {
+  background: #fee;
+  color: #c0392b;
+  border: 1px solid #fab1a0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
 }
 .preview-area h2 {
   font-size: 1rem;

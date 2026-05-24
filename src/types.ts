@@ -1,4 +1,5 @@
 export type OrigamiStyle = 'auto' | 'task' | 'work-life' | 'triage';
+export type OrigamiStatus = 'idle' | 'analyzing' | 'preview' | 'executing';
 
 export interface ClassificationResult {
   groupName: string;
@@ -10,4 +11,11 @@ export interface TabInfo {
   title?: string;
   url?: string;
   favIconUrl?: string;
+}
+
+export interface AppState {
+  status: OrigamiStatus;
+  style?: OrigamiStyle;
+  previewGroups: ClassificationResult[];
+  error?: string;
 }

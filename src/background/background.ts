@@ -1,6 +1,29 @@
-import { ClassificationResult, OrigamiStyle } from '../types';
+import { ClassificationResult, OrigamiStyle, AppState } from '../types';
+
+const INITIAL_STATE: AppState = {
+  status: 'idle',
+  previewGroups: [],
+};
+
+async function getState(): Promise<AppState> {
+  const result = await chrome.storage.local.get('appState');
+  return (result.appState as AppState) || INITIAL_STATE;
+}
+
+async function updateState(partialState: Partial<AppState>) {
+  const currentState = await getState();
+  const newState = { ...currentState, ...partialState };
+  await chrome.storage.local.set({ appState: newState });
+  // ポップアップが開いている場合に通知（エラーは無視）
+  chrome.runtime.sendMessage({ type: 'STATE_UPDATED', state: newState }).catch(() => {});
+}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'GET_STATE') {
+    getState().then(sendResponse);
+    return true;
+  }
+
   if (message.type === 'GET_TABS') {
     chrome.tabs.query({ currentWindow: true }, (tabs) => {
       sendResponse(tabs);
@@ -9,10 +32,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'ORGANIZE_TABS') {
-    handleOrganizeTabs(message.style).then(sendResponse).catch(err => {
-      console.error(err);
-      sendResponse({ error: err.message });
-    });
+    startOrganizeTabs(message.style);
+    sendResponse({ success: true });
     return true;
   }
 
@@ -21,11 +42,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === 'CANCEL') {
+    updateState({ status: 'idle', previewGroups: [], error: undefined }).then(() => sendResponse({ success: true }));
+    return true;
+  }
+
   if (message.type === 'UNDO') {
     handleUndo().then(sendResponse);
     return true;
   }
 });
+
+async function startOrganizeTabs(style: OrigamiStyle) {
+  await updateState({ status: 'analyzing', style, error: undefined, previewGroups: [] });
+  
+  try {
+    const result = await handleOrganizeTabs(style);
+    await updateState({ status: 'preview', previewGroups: result });
+  } catch (err: any) {
+    await updateState({ status: 'idle', error: err.message });
+  }
+}
 
 async function handleOrganizeTabs(style: OrigamiStyle): Promise<ClassificationResult[]> {
   const tabs = await chrome.tabs.query({ currentWindow: true });
@@ -61,7 +98,6 @@ async function handleOrganizeTabs(style: OrigamiStyle): Promise<ClassificationRe
     const data = await response.json();
 
     if (data.error) {
-      // エラーが発生した場合は、原因を問わず利用可能なモデル一覧を取得して表示する
       let availableModels = "取得失敗";
       try {
         const listResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`);
@@ -123,29 +159,35 @@ ${tabList}`;
 }
 
 async function handleExecuteOrganize(groups: ClassificationResult[]) {
-  const currentTabs = await chrome.tabs.query({ currentWindow: true });
-  const snapshot = currentTabs.map(t => ({
-    id: t.id,
-    index: t.index,
-    groupId: t.groupId,
-    pinned: t.pinned,
-    url: t.url
-  }));
-  await chrome.storage.local.set({ lastSnapshot: snapshot });
+  await updateState({ status: 'executing' });
+  try {
+    const currentTabs = await chrome.tabs.query({ currentWindow: true });
+    const snapshot = currentTabs.map(t => ({
+      id: t.id,
+      index: t.index,
+      groupId: t.groupId,
+      pinned: t.pinned,
+      url: t.url
+    }));
+    await chrome.storage.local.set({ lastSnapshot: snapshot });
 
-  for (const group of groups) {
-    const validTabIds = group.tabIds.filter((id): id is number => typeof id === 'number');
-    if (validTabIds.length === 0) continue;
+    for (const group of groups) {
+      const validTabIds = group.tabIds.filter((id): id is number => typeof id === 'number');
+      if (validTabIds.length === 0) continue;
 
-    if (group.groupName === '断捨離') {
-       await chrome.tabs.remove(validTabIds);
-    } else {
-      const groupId = await chrome.tabs.group({ tabIds: validTabIds as any });
-      await chrome.tabGroups.update(groupId, { title: group.groupName });
+      if (group.groupName === '断捨離') {
+        await chrome.tabs.remove(validTabIds);
+      } else {
+        const groupId = await chrome.tabs.group({ tabIds: validTabIds as any });
+        await chrome.tabGroups.update(groupId, { title: group.groupName });
+      }
     }
+    await updateState({ status: 'idle', previewGroups: [] });
+    return { success: true };
+  } catch (err: any) {
+    await updateState({ status: 'preview', error: `実行エラー: ${err.message}` });
+    return { success: false, error: err.message };
   }
-  
-  return { success: true };
 }
 
 async function handleUndo() {
