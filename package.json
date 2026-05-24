@@ -1,6 +1,6 @@
 {
   "name": "tab-origami",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "A Chrome extension that allows you to manage your tabs in a more efficient way.",
   "main": "index.js",
   "scripts": {
