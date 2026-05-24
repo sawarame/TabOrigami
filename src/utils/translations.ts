@@ -17,10 +17,10 @@ export const translations = {
     missingApiKeyTitle: 'APIキーが必要です',
     missingApiKeyDescription: 'Google AI Studio で APIキーを取得し、設定画面で入力してください。',
     // Styles
-    styleAuto: 'おまかせ折り',
-    styleTask: 'タスク集中折り',
-    styleWorkLife: 'オン・オフ折り',
-    styleTriage: '断捨離折り',
+    styleAuto: 'おまかせ',
+    styleTask: 'タスク集中',
+    styleWorkLife: 'オン・オフ',
+    styleTriage: '断捨離',
     // Options
     optionsTitle: 'TabOrigami 設定',
     apiSettings: 'Gemini API 設定',
@@ -61,10 +61,10 @@ export const translations = {
     missingApiKeyTitle: 'API Key Required',
     missingApiKeyDescription: 'Please obtain an API key from Google AI Studio and enter it in the settings.',
     // Styles
-    styleAuto: 'Auto Fold',
-    styleTask: 'Task Focus Fold',
-    styleWorkLife: 'Work-Life Fold',
-    styleTriage: 'Triage Fold',
+    styleAuto: 'Auto',
+    styleTask: 'Task Focus',
+    styleWorkLife: 'Work-Life',
+    styleTriage: 'Triage',
     // Options
     optionsTitle: 'TabOrigami Settings',
     apiSettings: 'Gemini API Settings',
