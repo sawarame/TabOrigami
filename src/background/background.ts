@@ -169,7 +169,7 @@ async function handleExecuteOrganize(groups: ClassificationResult[]) {
 
       if (group.groupName === cleanupGroupName) {
         await chrome.tabs.remove(validTabIds);
-      } else {
+      } else if (state.style !== 'triage') {
         const groupId = await chrome.tabs.group({ tabIds: validTabIds as any });
         await chrome.tabGroups.update(groupId, { title: group.groupName });
       }

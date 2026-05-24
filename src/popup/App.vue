@@ -51,7 +51,12 @@
     <div v-else-if="appState.status === 'preview'" class="preview-area">
       <h2>{{ t('previewTitle') }}</h2>
       <div v-for="(group, gIdx) in appState.previewGroups" :key="gIdx" class="group-card">
-        <h3>{{ group.groupName }}</h3>
+        <h3>
+          {{ group.groupName }}
+          <span v-if="appState.style === 'triage' && group.groupName !== cleanupGroupName" class="keep-badge">
+            {{ t('keepLabel') }}
+          </span>
+        </h3>
         <ul>
           <li v-for="(tabId, tIdx) in group.tabIds" :key="tIdx">
             <label>
@@ -98,6 +103,8 @@ const loadingMessage = computed(() => {
   if (appState.value.status === 'executing') return t('executing');
   return '';
 });
+
+const cleanupGroupName = computed(() => getTranslation(appState.value.language, 'aiDanshari'));
 
 onMounted(async () => {
   // 初回状態取得
@@ -315,6 +322,17 @@ header h1 {
   font-size: 0.9rem;
   margin: 0 0 8px 0;
   color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.keep-badge {
+  background: #ecfdf5;
+  color: #10b981;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
 }
 .group-card ul {
   list-style: none;
