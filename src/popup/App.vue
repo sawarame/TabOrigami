@@ -2,7 +2,9 @@
   <div class="container">
     <header>
       <h1>{{ t('title') }}</h1>
-      <button @click="openOptions" class="btn-settings" :title="t('settings')">⚙️</button>
+      <button @click="openOptions" class="btn-settings" :title="t('settings')">
+        <Settings :size="20" />
+      </button>
     </header>
 
     <!-- エラー表示 -->
@@ -33,12 +35,15 @@
       <p class="description">{{ t('description') }}</p>
       <div class="style-grid">
         <button v-for="style in styles" :key="style.id" @click="analyze(style.id)" class="style-card">
-          <span class="icon">{{ style.icon }}</span>
+          <component :is="style.icon" class="icon" :size="28" />
           <span class="label">{{ style.name }}</span>
         </button>
       </div>
       <div v-if="hasUndo" class="undo-section">
-        <button @click="undo" class="btn-undo">{{ t('undo') }}</button>
+        <button @click="undo" class="btn-undo">
+          <RotateCcw :size="16" />
+          {{ t('undo') }}
+        </button>
       </div>
     </div>
 
@@ -66,6 +71,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { Settings, Sparkles, Layout, Workflow, Wind, RotateCcw } from '@lucide/vue';
 import { OrigamiStyle, AppState, OrigamiLanguage } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
 
@@ -78,10 +84,10 @@ const appState = ref<AppState>({
 const t = (key: TranslationKey) => getTranslation(appState.value.language, key);
 
 const styles = computed(() => [
-  { id: 'auto' as OrigamiStyle, name: t('styleAuto'), icon: '✨' },
-  { id: 'task' as OrigamiStyle, name: t('styleTask'), icon: '💻' },
-  { id: 'work-life' as OrigamiStyle, name: t('styleWorkLife'), icon: '🏕️' },
-  { id: 'triage' as OrigamiStyle, name: t('styleTriage'), icon: '🧹' },
+  { id: 'auto' as OrigamiStyle, name: t('styleAuto'), icon: Sparkles },
+  { id: 'task' as OrigamiStyle, name: t('styleTask'), icon: Layout },
+  { id: 'work-life' as OrigamiStyle, name: t('styleWorkLife'), icon: Workflow },
+  { id: 'triage' as OrigamiStyle, name: t('styleTriage'), icon: Wind },
 ]);
 
 const allTabs = ref<chrome.tabs.Tab[]>([]);
@@ -165,9 +171,10 @@ const undo = async () => {
 
 <style scoped>
 .container {
-  color: #333;
+  color: #1e293b;
   min-width: 320px;
   padding: 16px;
+  background-color: #ffffff;
 }
 header {
   display: flex;
@@ -177,63 +184,77 @@ header {
   margin-bottom: 16px;
 }
 header h1 {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   margin: 0;
+  font-weight: 700;
+  color: #0f172a;
 }
 .btn-settings {
   position: absolute;
   right: 0;
   background: transparent;
   padding: 4px;
-  font-size: 1.1rem;
-  opacity: 0.6;
-  transition: opacity 0.2s;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, transform 0.2s;
+  border: none;
+  cursor: pointer;
 }
 .btn-settings:hover {
-  opacity: 1;
+  color: #1e293b;
+  transform: rotate(30deg);
 }
 .description {
   font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 16px;
+  color: #64748b;
+  margin-bottom: 20px;
+  text-align: center;
+  line-height: 1.5;
 }
 .style-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 16px;
 }
 .style-card {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 12px;
   cursor: pointer;
-  transition: transform 0.1s;
+  transition: all 0.2s;
+  color: #475569;
+  border: 1px solid #e2e8f0;
 }
 .style-card:hover {
   transform: translateY(-2px);
-  border-color: #aaa;
+  border-color: #3498db;
+  background: #f0f9ff;
+  color: #3498db;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 .style-card .icon {
-  font-size: 1.5rem;
-  margin-bottom: 8px;
+  color: inherit;
 }
 .style-card .label {
-  font-size: 0.8rem;
-  font-weight: bold;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 .loading {
   text-align: center;
-  padding: 32px 0;
+  padding: 40px 0;
 }
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
+  border: 3px solid #f1f5f9;
+  border-top: 3px solid #3498db;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
@@ -248,9 +269,9 @@ header h1 {
   margin-top: 12px;
 }
 .error-box {
-  background: #fee;
-  color: #c0392b;
-  border: 1px solid #fab1a0;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fee2e2;
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 16px;
@@ -271,9 +292,9 @@ header h1 {
   gap: 12px;
 }
 .link-external {
-  color: #3498db;
+  color: #2563eb;
   text-decoration: none;
-  font-weight: bold;
+  font-weight: 600;
 }
 .link-external:hover {
   text-decoration: underline;
@@ -281,18 +302,19 @@ header h1 {
 .preview-area h2 {
   font-size: 1rem;
   margin-bottom: 12px;
+  color: #0f172a;
 }
 .group-card {
-  background: white;
+  background: #f8fafc;
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 12px;
-  border: 1px solid #eee;
+  border: 1px solid #e2e8f0;
 }
 .group-card h3 {
   font-size: 0.9rem;
   margin: 0 0 8px 0;
-  color: #2c3e50;
+  color: #1e293b;
 }
 .group-card ul {
   list-style: none;
@@ -304,36 +326,52 @@ header h1 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  color: #475569;
 }
 .actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 20px;
 }
 button {
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   padding: 8px 16px;
   cursor: pointer;
   font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
 }
 .btn-primary {
   background: #3498db;
   color: white;
 }
+.btn-primary:hover {
+  background: #2980b9;
+}
 .btn-secondary {
-  background: #eee;
-  color: #333;
+  background: #f1f5f9;
+  color: #475569;
+}
+.btn-secondary:hover {
+  background: #e2e8f0;
 }
 .undo-section {
   margin-top: 24px;
-  text-align: center;
 }
 .btn-undo {
-  background: #f39c12;
+  background: #f59e0b;
   color: white;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.btn-undo:hover {
+  background: #d97706;
 }
 </style>
