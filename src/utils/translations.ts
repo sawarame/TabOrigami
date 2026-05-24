@@ -4,7 +4,7 @@ export const translations = {
   ja: {
     // Popup
     title: 'TabOrigami',
-    description: '折り方を選んで、タブを綺麗に整理しましょう。',
+    description: 'タブを綺麗に整理しましょう。',
     analyzing: 'AIがタブの内容を読み取っています...',
     executing: 'タブを整理しています...',
     previewTitle: '整理のプレビュー',
@@ -19,7 +19,7 @@ export const translations = {
     // Styles
     styleAuto: 'おまかせ',
     styleTask: 'タスク集中',
-    styleWorkLife: 'オン・オフ',
+    styleWorkLife: '仕事とプライベート',
     styleTriage: '断捨離',
     // Options
     optionsTitle: 'TabOrigami 設定',
@@ -48,7 +48,7 @@ export const translations = {
   en: {
     // Popup
     title: 'TabOrigami',
-    description: 'Choose a style to organize your tabs beautifully.',
+    description: 'Organize your tabs beautifully.',
     analyzing: 'AI is analyzing your tabs...',
     executing: 'Organizing tabs...',
     previewTitle: 'Preview Organization',
