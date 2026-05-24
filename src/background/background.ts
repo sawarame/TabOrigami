@@ -73,7 +73,7 @@ async function handleOrganizeTabs(style: OrigamiStyle, lang: OrigamiLanguage): P
 
   const result = await chrome.storage.local.get(['geminiApiKey', 'geminiModelName', 'excludePinnedTabs']);
   const geminiApiKey = typeof result.geminiApiKey === 'string' ? result.geminiApiKey.trim() : null;
-  const modelName = typeof result.geminiModelName === 'string' ? result.geminiModelName.trim() : "gemini-2.5-flash";
+  const modelName = typeof result.geminiModelName === 'string' ? result.geminiModelName.trim() : "gemini-3.1-flash-lite";
   const excludePinned = result.excludePinnedTabs === true;
 
   let targetTabs = tabs;

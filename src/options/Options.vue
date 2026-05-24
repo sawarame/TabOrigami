@@ -17,12 +17,15 @@
 
       <div class="field">
         <label for="model-name">{{ t('modelLabel') }}</label>
-        <input 
-          id="model-name" 
-          v-model="modelName" 
-          type="text" 
-          placeholder="gemini-flash-lite-latest"
-        />
+        <div class="input-group">
+          <input 
+            id="model-name" 
+            v-model="modelName" 
+            type="text" 
+            placeholder="gemini-3.1-flash-lite"
+          />
+          <button @click="resetModel" class="btn-reset">{{ t('resetToDefault') }}</button>
+        </div>
         <p class="hint">
           {{ language === 'ja' ? '推奨:' : 'Recommended:' }} 
           <code>gemini-2.5-flash</code>, <code>gemini-3.5-flash</code>, <code>gemini-flash-latest</code>, <code>gemini-2.5-flash-lite</code>, <code>gemini-3.1-flash-lite</code>, <code>gemini-flash-lite-latest</code>
@@ -62,7 +65,7 @@ import { OrigamiLanguage } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
 
 const apiKey = ref('');
-const modelName = ref('gemini-2.5-flash');
+const modelName = ref('gemini-3.1-flash-lite');
 const language = ref<OrigamiLanguage>('ja');
 const excludePinnedTabs = ref(false);
 const saved = ref(false);
@@ -88,6 +91,10 @@ onMounted(async () => {
     excludePinnedTabs.value = result.excludePinnedTabs;
   }
 });
+
+const resetModel = () => {
+  modelName.value = 'gemini-3.1-flash-lite';
+};
 
 const save = async () => {
   await chrome.storage.local.set({ 
@@ -132,6 +139,26 @@ h2 {
 }
 .field {
   margin: 16px 0;
+}
+.input-group {
+  display: flex;
+  gap: 8px;
+}
+.input-group input {
+  flex: 1;
+}
+.btn-reset {
+  background: #f1f1f1;
+  color: #666;
+  border: 1px solid #ddd;
+  padding: 0 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.btn-reset:hover {
+  background: #e9e9e9;
 }
 .checkbox-field {
   display: flex;
