@@ -24,7 +24,8 @@
           placeholder="gemini-flash-lite-latest"
         />
         <p class="hint">
-          推奨: <code>gemini-flash-lite-latest</code>, <code>gemini-3.1-flash-lite</code>, <code>gemini-2.5-flash-lite</code>
+          {{ language === 'ja' ? '推奨:' : 'Recommended:' }} 
+          <code>gemini-2.5-flash</code>, <code>gemini-3.5-flash</code>, <code>gemini-flash-latest</code>, <code>gemini-2.5-flash-lite</code>, <code>gemini-3.1-flash-lite</code>, <code>gemini-flash-lite-latest</code>
         </p>
       </div>
 
