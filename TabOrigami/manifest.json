@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "TabOrigami",
+  "name": "__MSG_extensionName__",
   "version": "0.1.2",
-  "description": "Gemini APIを使用してタブを賢く整理する拡張機能",
+  "description": "__MSG_extensionDescription__",
   "default_locale": "ja",
   "permissions": [
     "tabs",
