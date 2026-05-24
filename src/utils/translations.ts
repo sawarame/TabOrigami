@@ -3,7 +3,7 @@ import { OrigamiLanguage } from '../types';
 export const translations = {
   ja: {
     // Popup
-    title: '🕊️ TabOrigami',
+    title: 'TabOrigami',
     description: '折り方を選んで、タブを綺麗に整理しましょう。',
     analyzing: 'AIがタブの内容を読み取っています...',
     executing: 'タブを整理しています...',
@@ -19,7 +19,7 @@ export const translations = {
     styleWorkLife: 'オン・オフ折り',
     styleTriage: '断捨離折り',
     // Options
-    optionsTitle: '🕊️ TabOrigami 設定',
+    optionsTitle: 'TabOrigami 設定',
     apiSettings: 'Gemini API 設定',
     apiKeyLabel: 'Gemini API Key:',
     modelLabel: '使用するモデル名:',
@@ -44,7 +44,7 @@ export const translations = {
   },
   en: {
     // Popup
-    title: '🕊️ TabOrigami',
+    title: 'TabOrigami',
     description: 'Choose a style to organize your tabs beautifully.',
     analyzing: 'AI is analyzing your tabs...',
     executing: 'Organizing tabs...',
@@ -60,7 +60,7 @@ export const translations = {
     styleWorkLife: 'Work-Life Fold',
     styleTriage: 'Triage Fold',
     // Options
-    optionsTitle: '🕊️ TabOrigami Settings',
+    optionsTitle: 'TabOrigami Settings',
     apiSettings: 'Gemini API Settings',
     apiKeyLabel: 'Gemini API Key:',
     modelLabel: 'Model Name:',

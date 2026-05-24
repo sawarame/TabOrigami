@@ -1,4 +1,4 @@
-## 🕊️ TabOrigami - 基本仕様書
+## TabOrigami - 基本仕様書
 
 ### 1. コアコンセプト
 
