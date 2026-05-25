@@ -67,7 +67,9 @@
                 :checked="isTabSelected(gIdx, tabId)" 
                 @change="toggleTab(gIdx, tabId)"
               >
-              {{ getTabTitle(tabId) }}
+              <img v-if="getTabFavIcon(tabId)" :src="getTabFavIcon(tabId)" class="favicon" alt="">
+              <FileText v-else :size="14" class="favicon-fallback" />
+              <span class="tab-title">{{ getTabTitle(tabId) }}</span>
             </label>
           </li>
         </ul>
@@ -82,7 +84,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw } from '@lucide/vue';
+import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw, FileText } from '@lucide/vue';
 import { OrigamiStyle, AppState, OrigamiLanguage, ClassificationResult } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
 
@@ -151,6 +153,10 @@ onMounted(async () => {
 
 const getTabTitle = (id: number | undefined) => {
   return allTabs.value.find(t => t.id === id)?.title || t('unknownTab');
+};
+
+const getTabFavIcon = (id: number | undefined) => {
+  return allTabs.value.find(t => t.id === id)?.favIconUrl;
 };
 
 const isTabSelected = (gIdx: number, tabId: number | undefined) => {
@@ -390,6 +396,20 @@ header h1 {
 .group-card li label.no-checkbox {
   padding-left: 0;
   cursor: default;
+}
+.favicon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.favicon-fallback {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+.tab-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .actions {
   display: flex;
