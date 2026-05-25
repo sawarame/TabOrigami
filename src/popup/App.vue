@@ -56,11 +56,17 @@
           <span v-if="appState.style === 'triage' && group.groupName !== cleanupGroupName" class="keep-badge">
             {{ t('keepLabel') }}
           </span>
+          <Trash2 v-if="appState.style === 'triage' && group.groupName === cleanupGroupName" :size="16" class="trash-icon" />
         </h3>
         <ul>
-          <li v-for="(tabId, tIdx) in group.tabIds" :key="tIdx">
-            <label>
-              <input type="checkbox" checked @change="toggleTab(gIdx, tIdx)">
+          <li v-for="(tabId, tIdx) in originalGroups[gIdx]?.tabIds" :key="tIdx">
+            <label :class="{ 'no-checkbox': appState.style === 'triage' && group.groupName !== cleanupGroupName }">
+              <input 
+                v-if="!(appState.style === 'triage' && group.groupName !== cleanupGroupName)"
+                type="checkbox" 
+                :checked="isTabSelected(gIdx, tabId)" 
+                @change="toggleTab(gIdx, tabId)"
+              >
               {{ getTabTitle(tabId) }}
             </label>
           </li>
@@ -76,8 +82,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { Settings, Sparkles, Layout, Workflow, Wind, RotateCcw } from '@lucide/vue';
-import { OrigamiStyle, AppState, OrigamiLanguage } from '../types';
+import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw } from '@lucide/vue';
+import { OrigamiStyle, AppState, OrigamiLanguage, ClassificationResult } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
 
 const appState = ref<AppState>({
@@ -86,13 +92,16 @@ const appState = ref<AppState>({
   language: 'ja',
 });
 
+// 元のグループ構成を保持（チェックボックスを外してもリストから消えないようにするため）
+const originalGroups = ref<ClassificationResult[]>([]);
+
 const t = (key: TranslationKey) => getTranslation(appState.value.language, key);
 
 const styles = computed(() => [
   { id: 'auto' as OrigamiStyle, name: t('styleAuto'), icon: Sparkles },
   { id: 'task' as OrigamiStyle, name: t('styleTask'), icon: Layout },
   { id: 'work-life' as OrigamiStyle, name: t('styleWorkLife'), icon: Workflow },
-  { id: 'triage' as OrigamiStyle, name: t('styleTriage'), icon: Wind },
+  { id: 'triage' as OrigamiStyle, name: t('styleTriage'), icon: Trash2 },
 ]);
 
 const allTabs = ref<chrome.tabs.Tab[]>([]);
@@ -119,6 +128,9 @@ onMounted(async () => {
     ...state, 
     language: language || state.language || (chrome.i18n.getUILanguage().startsWith('ja') ? 'ja' : 'en')
   };
+  if (appState.value.status === 'preview') {
+    originalGroups.value = JSON.parse(JSON.stringify(appState.value.previewGroups));
+  }
   allTabs.value = tabs;
 
   const { lastSnapshot } = await chrome.storage.local.get('lastSnapshot');
@@ -128,12 +140,35 @@ onMounted(async () => {
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'STATE_UPDATED') {
       appState.value = { ...message.state, language: appState.value.language };
+      if (appState.value.status === 'preview' && originalGroups.value.length === 0) {
+        originalGroups.value = JSON.parse(JSON.stringify(appState.value.previewGroups));
+      } else if (appState.value.status === 'idle') {
+        originalGroups.value = [];
+      }
     }
   });
 });
 
 const getTabTitle = (id: number | undefined) => {
   return allTabs.value.find(t => t.id === id)?.title || t('unknownTab');
+};
+
+const isTabSelected = (gIdx: number, tabId: number | undefined) => {
+  return appState.value.previewGroups[gIdx]?.tabIds.includes(tabId);
+};
+
+const toggleTab = (gIdx: number, tabId: number | undefined) => {
+  const group = appState.value.previewGroups[gIdx];
+  if (!group) return;
+
+  const index = group.tabIds.indexOf(tabId);
+  if (index > -1) {
+    group.tabIds.splice(index, 1);
+  } else {
+    group.tabIds.push(tabId);
+  }
+  // 状態を同期
+  chrome.storage.local.set({ appState: appState.value });
 };
 
 const analyze = async (style: OrigamiStyle) => {
@@ -151,10 +186,6 @@ const cancel = async () => {
 const clearError = () => {
   appState.value.error = undefined;
   chrome.storage.local.set({ appState: appState.value });
-};
-
-const toggleTab = (gIdx: number, tIdx: number) => {
-  // TODO: 選択解除の実装
 };
 
 const execute = async () => {
@@ -334,6 +365,9 @@ header h1 {
   border-radius: 4px;
   font-weight: 600;
 }
+.trash-icon {
+  color: #ef4444;
+}
 .group-card ul {
   list-style: none;
   padding: 0;
@@ -346,6 +380,16 @@ header h1 {
   text-overflow: ellipsis;
   margin-bottom: 6px;
   color: #475569;
+}
+.group-card li label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.group-card li label.no-checkbox {
+  padding-left: 0;
+  cursor: default;
 }
 .actions {
   display: flex;
