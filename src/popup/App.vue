@@ -56,7 +56,7 @@
           <span v-if="appState.style === 'triage' && group.groupName !== cleanupGroupName" class="keep-badge">
             {{ t('keepLabel') }}
           </span>
-          <Trash2 v-if="appState.style === 'triage' && group.groupName === cleanupGroupName" :size="16" class="trash-icon" />
+          <Trash2 v-if="group.groupName === cleanupGroupName" :size="16" class="trash-icon" />
         </h3>
         <ul>
           <li v-for="(tabId, tIdx) in originalGroups[gIdx]?.tabIds" :key="tIdx">
