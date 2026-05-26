@@ -9,7 +9,7 @@ module.exports = {
     options: './src/options/main.ts'
   },
   output: {
-    path: path.resolve(__dirname, 'TabOrigami/js'),
+    path: path.resolve(__dirname, 'package/js'),
     filename: '[name].js',
     clean: true
   },

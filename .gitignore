@@ -25,5 +25,5 @@ TestResults.xml
 .DS_Store
 
 /node_modules
-/TabOrigami/js
-/TabOrigami.zip
+/package/js
+/package.zip

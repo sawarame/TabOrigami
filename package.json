@@ -4,7 +4,7 @@
   "description": "A Chrome extension that allows you to manage your tabs in a more efficient way.",
   "main": "index.js",
   "scripts": {
-    "build": "rimraf ./TabOrigami/js && rimraf TabOrigami.zip && npx webpack && (cd TabOrigami && zip -r ../TabOrigami.zip .)",
+    "build": "rimraf ./package/js && rimraf package.zip && npx webpack && (cd package && zip -r ../package.zip .)",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
