@@ -27,3 +27,6 @@ TestResults.xml
 /node_modules
 /package/js
 /package.zip
+
+# Antigravity CLI local state
+.antigravitycli/
