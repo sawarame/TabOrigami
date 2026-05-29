@@ -149,7 +149,13 @@ async function handleOrganizeTabs(style: OrigamiStyle, lang: OrigamiLanguage): P
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error("AI response was empty.");
 
-    return JSON.parse(text);
+    const parsed = JSON.parse(text) as ClassificationResult[];
+    if (style === 'triage') {
+      // 整理モードが断捨離の場合は、「断捨離」グループのみをプレビュー対象にする
+      const cleanupGroupName = getTranslation(lang, 'aiDanshari');
+      return parsed.filter(g => g.groupName === cleanupGroupName);
+    }
+    return parsed;
   } catch (error) {
     console.error("Gemini API Error:", error);
     throw error;

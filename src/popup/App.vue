@@ -67,9 +67,6 @@
       >
         <h3>
           {{ group.groupName }}
-          <span v-if="appState.style === 'triage' && group.groupName !== cleanupGroupName" class="keep-badge">
-            {{ t('keepLabel') }}
-          </span>
           <Trash2 v-if="group.groupName === cleanupGroupName" :size="16" class="trash-icon" />
         </h3>
 
@@ -102,9 +99,8 @@
               <GripVertical :size="14" />
             </span>
 
-            <label :class="{ 'no-checkbox': appState.style === 'triage' && group.groupName !== cleanupGroupName }">
+            <label>
               <input
-                v-if="!(appState.style === 'triage' && group.groupName !== cleanupGroupName)"
                 type="checkbox"
                 :checked="isTabSelected(gIdx, tabId)"
                 @change="toggleTab(gIdx, tabId)"
@@ -614,14 +610,6 @@ header h1 {
   align-items: center;
   gap: 8px;
 }
-.keep-badge {
-  background: #ecfdf5;
-  color: #10b981;
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 600;
-}
 .trash-icon {
   color: #ef4444;
 }
@@ -679,6 +667,7 @@ header h1 {
   /* テキストのはみ出しを防ぐ */
   overflow: hidden;
 }
+
 .group-card li label.no-checkbox {
   cursor: default;
 }
