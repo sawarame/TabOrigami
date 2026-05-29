@@ -7,12 +7,46 @@ const INITIAL_STATE: AppState = {
   language: 'ja' // デフォルト
 };
 
+/**
+ * ストレージから読み込んだ AppState を正規化するヘルパー。
+ *
+ * 背景:
+ *   Vue 3 の Proxy オブジェクトを chrome.storage.local.set() に直接渡すと、
+ *   配列が JSON.stringify() 相当の処理を経ずにインデックスキーのオブジェクト形式
+ *   ({ "0": 1, "1": 2 } など) として保存される場合がある。
+ *   この関数はそのような壊れた tabIds を Array.from() / Object.values() で
+ *   正規の配列に修復する。
+ *
+ * @param state - ストレージから読み込んだ AppState（未正規化の可能性あり）
+ * @returns 正規化された AppState
+ */
+function normalizeState(state: AppState): AppState {
+  // previewGroups 自体が配列でない場合（オブジェクト形式で保存されている場合）も修復する
+  const rawGroups = state.previewGroups;
+  const groupsArray: ClassificationResult[] = Array.isArray(rawGroups)
+    ? rawGroups
+    : Object.values((rawGroups || {}) as Record<string, ClassificationResult>);
+
+  return {
+    ...state,
+    previewGroups: groupsArray.map(group => ({
+      ...group,
+      tabIds: Array.isArray(group.tabIds)
+        ? group.tabIds
+        // 配列でない場合はオブジェクトのバリューを配列として取得
+        : Object.values(group.tabIds as Record<string, number | undefined>),
+    })),
+  };
+}
+
 async function getState(): Promise<AppState> {
   const result = await chrome.storage.local.get(['appState', 'language']);
-  const state = (result.appState as AppState) || INITIAL_STATE;
+  // normalizeState を通して読み込み時に壊れた tabIds を修復する
+  const state = normalizeState((result.appState as AppState) || INITIAL_STATE);
   if (result.language) state.language = result.language as OrigamiLanguage;
   return state;
 }
+
 
 async function updateState(partialState: Partial<AppState>) {
   const currentState = await getState();
