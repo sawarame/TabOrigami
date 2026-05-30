@@ -46,7 +46,8 @@ export const translations = {
     aiPromptHeader: '以下のタブを分類ルールに従って分類し、JSON配列で返してください。',
     aiRuleHeader: '【共通ルール】',
     aiStyleHeader: '【スタイル別ルール: {style}】',
-    aiTabListHeader: '【タブリスト】'
+    aiTabListHeader: '【タブリスト】',
+    noDanshariTabs: '断捨離対象のタブはありませんでした。'
   },
   en: {
     // Popup
@@ -93,7 +94,8 @@ export const translations = {
     aiPromptHeader: 'Please classify the following tabs according to the rules and return as a JSON array.',
     aiRuleHeader: '[Common Rules]',
     aiStyleHeader: '[Style Rules: {style}]',
-    aiTabListHeader: '[Tab List]'
+    aiTabListHeader: '[Tab List]',
+    noDanshariTabs: 'There were no tabs subject to decluttering.'
   }
 };
 

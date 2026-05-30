@@ -304,6 +304,8 @@ async function handleExecuteOrganize(groups: ClassificationResult[]) {
       if (group.groupName === cleanupGroupName) {
         await chrome.tabs.remove(validTabIds);
       } else if (state.style !== 'triage') {
+        // 先にタブをウィンドウの末尾に移動させることで、プレビュー画面のグループ・タブの並び順をブラウザ上に反映する
+        await chrome.tabs.move(validTabIds, { index: -1 });
         const groupId = await chrome.tabs.group({ tabIds: validTabIds as any });
         await chrome.tabGroups.update(groupId, { title: group.groupName });
       }
