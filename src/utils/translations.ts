@@ -37,7 +37,7 @@ export const translations = {
     excludePinnedLabel: '固定されたタブを整理の対象外にする',
     // Background / AI
     aiSystemInstruction: 'あなたはブラウザのタブを整理する専門家です。与えられたタブのリストを、指定されたスタイルに従ってJSON配列形式で分類してください。返却はJSON配列のみとし、説明文やMarkdownの装飾は一切含めないでください。形式: [{ "groupName": "グループ名", "tabIds": [1, 2, ...] }]',
-    aiStyleAuto: 'タブのタイトルとURLから、最適なグループ名を考えて分類してください。',
+    aiStyleAuto: 'タブのタイトル、URL、およびページの内容から、最適なグループ名を考えて分類してください。',
     aiStyleTask: 'タブを「現在進行中のメインタスク（調査・開発）」、「リファレンス（後で読む資料）」、「無関係なノイズ（SNSや動画）」の3つのグループに分類してください。',
     aiStyleWorkLife: 'タブを「仕事・開発関連」と「趣味・プライベート関連」の2つのグループに分類してください。',
     aiStyleTriage: '「保存すべき重要タブ」と「閉じてよさそうな不要なタブ」の2つのグループに分類してください。不要なタブのグループ名は「断捨離」としてください。',
@@ -84,7 +84,7 @@ export const translations = {
     excludePinnedLabel: 'Exclude pinned tabs from organization',
     // Background / AI
     aiSystemInstruction: 'You are an expert at organizing browser tabs. Classify the given list of tabs into a JSON array format according to the specified style. Return only the JSON array, without any explanation or Markdown decoration. Format: [{ "groupName": "Group Name", "tabIds": [1, 2, ...] }]',
-    aiStyleAuto: 'Create optimal group names based on tab titles and URLs.',
+    aiStyleAuto: 'Create optimal group names based on tab titles, URLs, and page contents.',
     aiStyleTask: 'Classify tabs into three groups: "Active Main Task (Research/Dev)", "Reference (Read later)", and "Irrelevant Noise (SNS/Video)".',
     aiStyleWorkLife: 'Classify tabs into two groups: "Work/Development" and "Personal/Private".',
     aiStyleTriage: 'Classify tabs into two groups: "Important Tabs to Keep" and "Unnecessary Tabs to Close". The name for the unnecessary tabs group should be "Cleanup".',
