@@ -27,7 +27,19 @@
     <!-- 解析中・実行中 -->
     <div v-if="appState.status === 'analyzing' || appState.status === 'executing'" class="loading">
       <div class="spinner"></div>
-      <p>{{ loadingMessage }}</p>
+      <p v-if="!appState.progress">{{ loadingMessage }}</p>
+      
+      <div v-if="appState.progress" class="progress-container">
+        <p class="progress-message">{{ appState.progress.message }}</p>
+        <div class="progress-bar-bg">
+          <div 
+            class="progress-bar-fill" 
+            :class="{ 'ai-thinking': appState.progress.current === appState.progress.total }"
+            :style="{ width: getProgressWidth(appState.progress) }"
+          ></div>
+        </div>
+      </div>
+
       <button v-if="appState.status === 'analyzing'" @click="cancel" class="btn-secondary btn-small">{{ t('cancel') }}</button>
     </div>
 
@@ -258,6 +270,16 @@ const undo = async () => {
   } finally {
     appState.value.status = 'idle';
   }
+};
+
+const getProgressWidth = (progress: { current: number; total: number } | undefined) => {
+  if (!progress || progress.total === 0) return '0%';
+  if (progress.current === progress.total) {
+    // AI考案中はCSSアニメーションで90%までじわじわ進める
+    return '90%';
+  }
+  // タブ読み取りは一瞬なので、最大20%として扱う
+  return `${(progress.current / progress.total) * 20}%`;
 };
 
 // ============================================================
@@ -554,6 +576,36 @@ header h1 {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+.progress-container {
+  margin-top: 16px;
+  margin-bottom: 12px;
+  text-align: left;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+}
+.progress-message {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background-color: #3498db;
+  transition: width 0.2s ease-out;
+}
+.progress-bar-fill.ai-thinking {
+  /* AI考案中は8秒かけて90%までゆっくり進める */
+  transition: width 8s cubic-bezier(0.1, 0.7, 0.1, 1);
 }
 .btn-small {
   padding: 4px 12px;

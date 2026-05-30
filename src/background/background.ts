@@ -92,13 +92,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function startOrganizeTabs(style: OrigamiStyle) {
   const state = await getState();
-  await updateState({ status: 'analyzing', style, error: undefined, previewGroups: [] });
+  await updateState({ status: 'analyzing', style, error: undefined, previewGroups: [], progress: undefined });
   
   try {
     const result = await handleOrganizeTabs(style, state.language);
-    await updateState({ status: 'preview', previewGroups: result });
+    await updateState({ status: 'preview', previewGroups: result, progress: undefined });
   } catch (err: any) {
-    await updateState({ status: 'idle', error: err.message });
+    await updateState({ status: 'idle', error: err.message, progress: undefined });
   }
 }
 
@@ -115,11 +115,81 @@ async function handleOrganizeTabs(style: OrigamiStyle, lang: OrigamiLanguage): P
     targetTabs = tabs.filter(t => !t.pinned);
   }
 
-  const tabData = targetTabs.map(t => ({ id: t.id, title: t.title, url: t.url }));
-  
   if (!geminiApiKey) {
     throw new Error("MISSING_API_KEY");
   }
+
+  const tabData = [];
+  for (let i = 0; i < targetTabs.length; i++) {
+    const t = targetTabs[i];
+    let description = "";
+    
+    const message = lang === 'ja' 
+      ? `タブの内容を読み取っています... (${i + 1}/${targetTabs.length})` 
+      : `Reading tab content... (${i + 1}/${targetTabs.length})`;
+    await updateState({ progress: { current: i + 1, total: targetTabs.length, message } });
+
+    console.log(`[Debug] 処理開始: タブ ${i + 1}/${targetTabs.length} | ID=${t.id} | Status=${t.status} | Discarded=${t.discarded} | URL=${t.url}`);
+
+    // スクリプト注入は http:// と https:// のみに限定（ストアページは除く）
+    const isInjectableUrl = t.url && (t.url.startsWith('http://') || t.url.startsWith('https://')) && !t.url.startsWith('https://chrome.google.com/webstore');
+
+    if (t.id && isInjectableUrl) {
+      try {
+        console.log(`[Debug] スクリプト注入開始: タブ ID=${t.id}`);
+        
+        // 稀に休眠状態のタブ等でexecuteScriptが永久に返ってこない現象を防ぐため、2秒のタイムアウトを設定
+        const scriptPromise = chrome.scripting.executeScript({
+          target: { tabId: t.id },
+          func: () => {
+            const getMeta = (name: string) => document.querySelector(`meta[name="${name}"]`)?.getAttribute('content') || '';
+            const getOg = (property: string) => document.querySelector(`meta[property="${property}"]`)?.getAttribute('content') || '';
+            
+            const desc = getOg('og:description') || getMeta('description');
+            const keywords = getMeta('keywords');
+            const h1 = document.querySelector('h1')?.innerText.trim() || '';
+            
+            let bodyText = '';
+            if (!desc) {
+               bodyText = document.body?.innerText?.substring(0, 300).replace(/\s+/g, ' ') || '';
+            }
+            
+            return { desc, keywords, h1, bodyText };
+          }
+        });
+
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('タイムアウト (2000ms)')), 2000)
+        );
+
+        const results = await Promise.race([scriptPromise, timeoutPromise]) as any[];
+        console.log(`[Debug] スクリプト注入完了: タブ ID=${t.id}`);
+        
+        if (results && results[0] && results[0].result) {
+          const res = results[0].result as any;
+          const ext = [];
+          if (res.desc) ext.push(`Desc: ${res.desc.substring(0, 200)}`);
+          if (res.keywords) ext.push(`Keywords: ${res.keywords}`);
+          if (res.h1) ext.push(`H1: ${res.h1.substring(0, 100)}`);
+          if (res.bodyText) ext.push(`Body: ${res.bodyText}`);
+          
+          description = ext.join(' | ');
+        }
+      } catch (e: any) {
+        console.warn(`[Debug] スクリプト注入失敗・スキップ: タブ ID=${t.id} | エラー: ${e.message}`);
+      }
+    } else {
+      console.log(`[Debug] 注入対象外のURLのためスキップ: タブ ID=${t.id} | URL=${t.url}`);
+    }
+    
+    console.log(`[Debug] 処理完了: タブ ${i + 1}/${targetTabs.length} | 抽出データ: ${description ? 'あり' : 'なし'}`);
+    tabData.push({ id: t.id, title: t.title, url: t.url, description: description });
+  }
+
+  console.log(`[Debug] 全タブ処理完了。AIへリクエスト送信開始...`);
+
+  const aiMessage = lang === 'ja' ? 'AIがグループ構成を考案中...' : 'AI is organizing groups...';
+  await updateState({ progress: { current: targetTabs.length, total: targetTabs.length, message: aiMessage } });
 
   const prompt = constructPrompt(style, tabData, lang);
   const systemInstruction = getTranslation(lang, 'aiSystemInstruction');
@@ -163,7 +233,13 @@ async function handleOrganizeTabs(style: OrigamiStyle, lang: OrigamiLanguage): P
 }
 
 function constructPrompt(style: OrigamiStyle, tabs: any[], lang: OrigamiLanguage): string {
-  const tabList = tabs.map(t => `ID:${t.id}, Title:${t.title}, URL:${t.url}`).join('\n');
+  const tabList = tabs.map(t => {
+    let info = `ID:${t.id}, Title:${t.title}, URL:${t.url}`;
+    if (t.description) {
+      info += `, Description:${t.description}`;
+    }
+    return info;
+  }).join('\n');
   
   let styleInstruction = "";
   switch (style) {
@@ -218,8 +294,11 @@ async function handleExecuteOrganize(groups: ClassificationResult[]) {
     };
     await chrome.storage.local.set({ lastSnapshot: snapshot });
 
+    const currentTabIds = new Set(currentTabs.map(t => t.id));
+
     for (const group of groups) {
-      const validTabIds = group.tabIds.filter((id): id is number => typeof id === 'number');
+      // 数値型であり、かつ現在開いているタブのID群に存在するものだけをフィルタリング（途中で閉じられたタブを除外）
+      const validTabIds = group.tabIds.filter((id): id is number => typeof id === 'number' && currentTabIds.has(id));
       if (validTabIds.length === 0) continue;
 
       if (group.groupName === cleanupGroupName) {

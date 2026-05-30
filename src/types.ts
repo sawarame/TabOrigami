@@ -20,4 +20,9 @@ export interface AppState {
   previewGroups: ClassificationResult[];
   error?: string;
   language: OrigamiLanguage;
+  progress?: {
+    current: number;
+    total: number;
+    message: string;
+  };
 }
