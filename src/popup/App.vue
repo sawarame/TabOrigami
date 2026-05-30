@@ -1,13 +1,14 @@
 <template>
   <div class="container">
-    <header>
-      <h1>{{ t('title') }}</h1>
-      <button @click="openOptions" class="btn-settings" :title="t('settings')">
-        <Settings :size="20" />
-      </button>
-    </header>
+    <div v-show="currentView === 'main'">
+      <header>
+        <h1>{{ t('title') }}</h1>
+        <button @click="openOptions" class="btn-settings" :title="t('settings')">
+          <Settings :size="20" />
+        </button>
+      </header>
 
-    <!-- エラー表示 -->
+      <!-- エラー表示 -->
     <div v-if="appState.error" class="error-box">
       <template v-if="appState.error === 'MISSING_API_KEY'">
         <h3>{{ t('missingApiKeyTitle') }}</h3>
@@ -118,6 +119,9 @@
         <button @click="execute" class="btn-primary">{{ t('execute') }}</button>
       </div>
     </div>
+    </div>
+    
+    <OptionsView v-if="currentView === 'options'" :isPopup="true" @close="currentView = 'main'" />
   </div>
 </template>
 
@@ -126,6 +130,9 @@ import { ref, onMounted, computed } from 'vue';
 import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw, FileText, GripVertical } from '@lucide/vue';
 import { OrigamiStyle, AppState, OrigamiLanguage, ClassificationResult } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
+import OptionsView from '../options/Options.vue';
+
+const currentView = ref<'main' | 'options'>('main');
 
 const appState = ref<AppState>({
   status: 'idle',
@@ -222,7 +229,7 @@ const analyze = async (style: OrigamiStyle) => {
 };
 
 const openOptions = () => {
-  chrome.runtime.openOptionsPage();
+  currentView.value = 'options';
 };
 
 const cancel = async () => {
