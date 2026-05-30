@@ -18,6 +18,7 @@ export const translations = {
     dragHint: 'ドラッグして並び替え・移動',
     missingApiKeyTitle: 'APIキーが必要です',
     missingApiKeyDescription: 'Google AI Studio で APIキーを取得し、設定画面で入力してください。',
+    back: '戻る',
     // Styles
     styleAuto: 'おまかせ',
     styleTask: 'タスク集中',
@@ -64,6 +65,7 @@ export const translations = {
     dragHint: 'Drag to reorder or move',
     missingApiKeyTitle: 'API Key Required',
     missingApiKeyDescription: 'Please obtain an API key from Google AI Studio and enter it in the settings.',
+    back: 'Back',
     // Styles
     styleAuto: 'Auto',
     styleTask: 'Task Focus',
