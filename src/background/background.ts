@@ -194,13 +194,28 @@ async function handleExecuteOrganize(groups: ClassificationResult[]) {
   await updateState({ status: 'executing' });
   try {
     const currentTabs = await chrome.tabs.query({ currentWindow: true });
-    const snapshot = currentTabs.map(t => ({
-      id: t.id,
-      index: t.index,
-      groupId: t.groupId,
-      pinned: t.pinned,
-      url: t.url
-    }));
+    
+    // 現在のウィンドウのグループ情報も取得して保存
+    let currentGroups: chrome.tabGroups.TabGroup[] = [];
+    if (chrome.tabGroups) {
+      currentGroups = await chrome.tabGroups.query({ windowId: chrome.windows.WINDOW_ID_CURRENT });
+    }
+
+    const snapshot = {
+      tabs: currentTabs.map(t => ({
+        id: t.id,
+        index: t.index,
+        groupId: t.groupId,
+        pinned: t.pinned,
+        url: t.url
+      })),
+      groups: currentGroups.map(g => ({
+        id: g.id,
+        title: g.title,
+        color: g.color,
+        collapsed: g.collapsed
+      }))
+    };
     await chrome.storage.local.set({ lastSnapshot: snapshot });
 
     for (const group of groups) {
@@ -224,18 +239,57 @@ async function handleExecuteOrganize(groups: ClassificationResult[]) {
 
 async function handleUndo() {
   const result = await chrome.storage.local.get('lastSnapshot');
-  const lastSnapshot = result.lastSnapshot as any[];
-  if (!lastSnapshot) return { success: false, error: 'No snapshot found' };
+  const snapshotData = result.lastSnapshot as any;
+  if (!snapshotData) return { success: false, error: 'No snapshot found' };
   
-  for (const item of lastSnapshot) {
+  // 後方互換性のため、配列の場合は古い形式とみなす
+  const isOldFormat = Array.isArray(snapshotData);
+  const lastSnapshotTabs = isOldFormat ? snapshotData : snapshotData.tabs;
+  const lastSnapshotGroups = isOldFormat ? [] : (snapshotData.groups || []);
+  
+  // IDマッピング: 古いグループIDから新しく作成したグループIDへのマップ
+  const groupIdMap = new Map<number, number>();
+
+  for (const item of lastSnapshotTabs) {
     try {
       if (item.id) {
-        await chrome.tabs.ungroup(item.id);
+        // 先にインデックス位置へ移動
         await chrome.tabs.move(item.id, { index: item.index });
+        
+        // グループの復元処理
+        if (item.groupId && item.groupId !== -1) {
+          // すでに新しいグループを作成済みかチェック
+          let targetGroupId = groupIdMap.get(item.groupId);
+          
+          if (targetGroupId === undefined) {
+            // 対象の元のグループ情報を探す
+            const originalGroup = lastSnapshotGroups.find((g: any) => g.id === item.groupId);
+            
+            // 新しくグループを作成してタブを追加
+            targetGroupId = await chrome.tabs.group({ tabIds: [item.id] });
+            groupIdMap.set(item.groupId, targetGroupId);
+            
+            // 元のグループ情報があればタイトルや色を復元
+            if (originalGroup && chrome.tabGroups) {
+              await chrome.tabGroups.update(targetGroupId, {
+                title: originalGroup.title,
+                color: originalGroup.color,
+                collapsed: originalGroup.collapsed
+              });
+            }
+          } else {
+            // 既存の復元済みグループに追加
+            await chrome.tabs.group({ tabIds: [item.id], groupId: targetGroupId });
+          }
+        } else {
+          // グループに属していなかった場合はグループから外す
+          await chrome.tabs.ungroup(item.id);
+        }
       } else {
         await chrome.tabs.create({ url: item.url, index: item.index });
       }
     } catch (e) {
+      // エラーが発生した場合は新しくタブを作成
       await chrome.tabs.create({ url: item.url, index: item.index });
     }
   }
