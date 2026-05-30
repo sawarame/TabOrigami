@@ -40,7 +40,7 @@
         </div>
       </div>
 
-      <button v-if="appState.status === 'analyzing'" @click="cancel" class="btn-secondary btn-small">{{ t('cancel') }}</button>
+      <button v-if="appState.status === 'analyzing' || appState.status === 'executing'" @click="cancel" class="btn-secondary btn-small">{{ t('cancel') }}</button>
     </div>
 
     <!-- 初期状態 -->
@@ -64,13 +64,17 @@
     <div v-else-if="appState.status === 'preview'" class="preview-area">
       <h2>{{ t('previewTitle') }}</h2>
 
-      <!--
-        グループカードのループ。
-        グループ全体もドロップゾーンとして機能させることで、
-        空グループや末尾へのドロップに対応する。
-      -->
-      <div
-        v-for="(group, gIdx) in appState.previewGroups"
+      <div v-if="hasNoDanshariTabs" class="empty-message">
+        <p>{{ t('noDanshariTabs') }}</p>
+      </div>
+      <template v-else>
+        <!--
+          グループカードのループ。
+          グループ全体もドロップゾーンとして機能させることで、
+          空グループや末尾へのドロップに対応する。
+        -->
+        <div
+          v-for="(group, gIdx) in appState.previewGroups"
         :key="gIdx"
         class="group-card"
         @dragover.prevent="onDragOverGroup($event, gIdx)"
@@ -125,10 +129,11 @@
           </li>
         </ul>
       </div>
+      </template>
 
       <div class="actions">
         <button @click="cancel" class="btn-secondary">{{ t('cancel') }}</button>
-        <button @click="execute" class="btn-primary">{{ t('execute') }}</button>
+        <button v-if="!hasNoDanshariTabs" @click="execute" class="btn-primary">{{ t('execute') }}</button>
       </div>
     </div>
     </div>
@@ -174,6 +179,11 @@ const loadingMessage = computed(() => {
 });
 
 const cleanupGroupName = computed(() => getTranslation(appState.value.language, 'aiDanshari'));
+
+const hasNoDanshariTabs = computed(() => {
+  if (appState.value.style !== 'triage' || appState.value.status !== 'preview') return false;
+  return appState.value.previewGroups.length === 0 || appState.value.previewGroups.every(g => g.tabIds.length === 0);
+});
 
 onMounted(async () => {
   // 初回状態取得
@@ -647,6 +657,19 @@ header h1 {
   font-size: 1rem;
   margin-bottom: 12px;
   color: #0f172a;
+}
+.empty-message {
+  text-align: center;
+  padding: 32px 16px;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+  margin-bottom: 16px;
+}
+.empty-message p {
+  margin: 0;
+  font-size: 0.95rem;
 }
 .group-card {
   background: #f8fafc;
