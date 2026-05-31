@@ -80,13 +80,19 @@
         </label>
       </div>
 
+      <div class="field help-section">
+        <a href="https://github.com/sawarame/TabOrigami/issues" target="_blank" class="help-link">
+          <Bug :size="16" /> {{ t('reportBug') }} <ExternalLink :size="14" />
+        </a>
+      </div>
+
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { Settings, Key, Eye, EyeOff, RotateCcw, Languages, Save, Check, ExternalLink, ArrowLeft } from '@lucide/vue';
+import { Settings, Key, Eye, EyeOff, RotateCcw, Languages, Save, Check, ExternalLink, ArrowLeft, Bug } from '@lucide/vue';
 import { OrigamiLanguage } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
 
@@ -405,5 +411,24 @@ input:focus, select:focus {
   background: #94a3b8;
   cursor: not-allowed;
   opacity: 0.7;
+}
+.help-section {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+.help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+.help-link:hover {
+  color: #3498db;
+  text-decoration: underline;
 }
 </style>

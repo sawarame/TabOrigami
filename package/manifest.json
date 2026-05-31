@@ -8,7 +8,8 @@
     "tabs",
     "tabGroups",
     "storage",
-    "scripting"
+    "scripting",
+    "contextMenus"
   ],
   "host_permissions": [
     "https://generativelanguage.googleapis.com/*",
