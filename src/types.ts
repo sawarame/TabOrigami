@@ -5,6 +5,7 @@ export type OrigamiLanguage = 'ja' | 'en';
 export interface ClassificationResult {
   groupName: string;
   tabIds: (number | undefined)[];
+  color?: chrome.tabGroups.Color;
 }
 
 export interface TabInfo {

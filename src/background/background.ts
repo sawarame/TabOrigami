@@ -307,7 +307,11 @@ async function handleExecuteOrganize(groups: ClassificationResult[]) {
         // 先にタブをウィンドウの末尾に移動させることで、プレビュー画面のグループ・タブの並び順をブラウザ上に反映する
         await chrome.tabs.move(validTabIds, { index: -1 });
         const groupId = await chrome.tabs.group({ tabIds: validTabIds as any });
-        await chrome.tabGroups.update(groupId, { title: group.groupName });
+        const updateProps: chrome.tabGroups.UpdateProperties = { title: group.groupName };
+        if (group.color) {
+          updateProps.color = group.color;
+        }
+        await chrome.tabGroups.update(groupId, updateProps);
       }
     }
     await updateState({ status: 'idle', previewGroups: [] });
