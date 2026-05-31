@@ -47,7 +47,18 @@ export const translations = {
     aiRuleHeader: '【共通ルール】',
     aiStyleHeader: '【スタイル別ルール: {style}】',
     aiTabListHeader: '【タブリスト】',
-    noDanshariTabs: '断捨離対象のタブはありませんでした。'
+    noDanshariTabs: '断捨離対象のタブはありませんでした。',
+    // Colors
+    colorAuto: '色を選択 (自動)',
+    colorGrey: 'グレー',
+    colorBlue: 'ブルー',
+    colorRed: 'レッド',
+    colorYellow: 'イエロー',
+    colorGreen: 'グリーン',
+    colorPink: 'ピンク',
+    colorPurple: 'パープル',
+    colorCyan: 'シアン',
+    colorOrange: 'オレンジ',
   },
   en: {
     // Popup
@@ -95,7 +106,18 @@ export const translations = {
     aiRuleHeader: '[Common Rules]',
     aiStyleHeader: '[Style Rules: {style}]',
     aiTabListHeader: '[Tab List]',
-    noDanshariTabs: 'There were no tabs subject to decluttering.'
+    noDanshariTabs: 'There were no tabs subject to decluttering.',
+    // Colors
+    colorAuto: 'Select Color (Auto)',
+    colorGrey: 'Grey',
+    colorBlue: 'Blue',
+    colorRed: 'Red',
+    colorYellow: 'Yellow',
+    colorGreen: 'Green',
+    colorPink: 'Pink',
+    colorPurple: 'Purple',
+    colorCyan: 'Cyan',
+    colorOrange: 'Orange',
   }
 };
 

@@ -61,7 +61,7 @@
     </div>
 
     <!-- プレビュー -->
-    <div v-else-if="appState.status === 'preview'" class="preview-area">
+    <div v-else-if="appState.status === 'preview'" class="preview-area" @click="closeColorDropdown">
       <h2>{{ t('previewTitle') }}</h2>
 
       <div v-if="hasNoDanshariTabs" class="empty-message">
@@ -82,10 +82,31 @@
         @drop.prevent="onDropToGroup($event, gIdx)"
         :class="{ 'drop-target': dropTargetGroupIdx === gIdx && dropInsertTabIdx === null }"
       >
-        <h3>
-          {{ group.groupName }}
-          <Trash2 v-if="group.groupName === cleanupGroupName" :size="16" class="trash-icon" />
-        </h3>
+        <div class="group-header">
+          <h3>
+            {{ group.groupName }}
+            <Trash2 v-if="group.groupName === cleanupGroupName" :size="16" class="trash-icon" />
+          </h3>
+          <div class="custom-color-select" v-if="group.groupName !== cleanupGroupName">
+            <div 
+              class="selected-color" 
+              :class="`color-${group.color || 'default'}`"
+              @click.stop="toggleColorDropdown(gIdx)"
+            >
+              <span class="color-dot" :class="`bg-${group.color || 'default'}`"></span>
+              {{ getColorLabel(group.color) }}
+            </div>
+            
+            <ul v-if="activeColorDropdown === gIdx" class="color-dropdown-list">
+              <li @click.stop="selectColor(gIdx, undefined)">
+                <span class="color-dot bg-default"></span> {{ t('colorAuto') }}
+              </li>
+              <li v-for="c in colorOptions" :key="c.value" @click.stop="selectColor(gIdx, c.value as any)">
+                <span class="color-dot" :class="`bg-${c.value}`"></span> {{ c.label }}
+              </li>
+            </ul>
+          </div>
+        </div>
 
         <ul>
           <!--
@@ -178,6 +199,48 @@ const loadingMessage = computed(() => {
   return '';
 });
 
+// カスタムカラーピッカーの状態と選択肢
+const activeColorDropdown = ref<number | null>(null);
+
+const colorOptions = computed(() => [
+  { value: 'grey', label: t('colorGrey') },
+  { value: 'blue', label: t('colorBlue') },
+  { value: 'red', label: t('colorRed') },
+  { value: 'yellow', label: t('colorYellow') },
+  { value: 'green', label: t('colorGreen') },
+  { value: 'pink', label: t('colorPink') },
+  { value: 'purple', label: t('colorPurple') },
+  { value: 'cyan', label: t('colorCyan') },
+  { value: 'orange', label: t('colorOrange') }
+]);
+
+const getColorLabel = (color: string | undefined) => {
+  if (!color) return t('colorAuto');
+  const option = colorOptions.value.find(o => o.value === color);
+  return option ? option.label : t('colorAuto');
+};
+
+const toggleColorDropdown = (gIdx: number) => {
+  if (activeColorDropdown.value === gIdx) {
+    activeColorDropdown.value = null;
+  } else {
+    activeColorDropdown.value = gIdx;
+  }
+};
+
+const selectColor = (gIdx: number, color: chrome.tabGroups.Color | undefined) => {
+  const group = appState.value.previewGroups[gIdx];
+  if (group) {
+    group.color = color;
+    saveState();
+  }
+  activeColorDropdown.value = null;
+};
+
+const closeColorDropdown = () => {
+  activeColorDropdown.value = null;
+};
+
 const cleanupGroupName = computed(() => getTranslation(appState.value.language, 'aiDanshari'));
 
 const hasNoDanshariTabs = computed(() => {
@@ -241,6 +304,10 @@ const toggleTab = (gIdx: number, tabId: number | undefined) => {
   } else {
     group.tabIds.push(tabId);
   }
+  saveState();
+};
+
+const saveState = () => {
   // JSON.parse(JSON.stringify()) でディープクローンしてから保存する。
   // Vue の Proxy をそのまま渡すと配列がオブジェクト形式で保存されてしまうため。
   chrome.storage.local.set({ appState: JSON.parse(JSON.stringify(appState.value)) });
@@ -260,8 +327,7 @@ const cancel = async () => {
 
 const clearError = () => {
   appState.value.error = undefined;
-  // JSON.parse(JSON.stringify()) でディープクローンしてから保存する。
-  chrome.storage.local.set({ appState: JSON.parse(JSON.stringify(appState.value)) });
+  saveState();
 };
 
 const execute = async () => {
@@ -684,17 +750,98 @@ header h1 {
   border-color: #3498db;
   background-color: #f0f9ff;
 }
-.group-card h3 {
+.trash-icon {
+  color: #ef4444;
+}
+.group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.group-header h3 {
+  margin: 0;
   font-size: 0.9rem;
-  margin: 0 0 8px 0;
   color: #1e293b;
   display: flex;
   align-items: center;
   gap: 8px;
 }
-.trash-icon {
-  color: #ef4444;
+.custom-color-select {
+  position: relative;
+  font-size: 0.75rem;
 }
+.selected-color {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background-color: #fff;
+  color: #334155;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+}
+.selected-color:hover {
+  background-color: #f8fafc;
+}
+.color-dropdown-list {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  margin-bottom: 0;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 4px 0 !important;
+  list-style: none;
+  min-width: 140px;
+  z-index: 50;
+}
+.color-dropdown-list li {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #475569;
+  margin-bottom: 0 !important;
+}
+.color-dropdown-list li:hover {
+  background-color: #f1f5f9;
+}
+.color-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+.bg-default { background-color: #cbd5e1; }
+.bg-grey { background-color: #94a3b8; }
+.bg-blue { background-color: #3b82f6; }
+.bg-red { background-color: #ef4444; }
+.bg-yellow { background-color: #eab308; }
+.bg-green { background-color: #22c55e; }
+.bg-pink { background-color: #ec4899; }
+.bg-purple { background-color: #a855f7; }
+.bg-cyan { background-color: #06b6d4; }
+.bg-orange { background-color: #f97316; }
+
+.selected-color.color-grey { background-color: #f1f5f9; border-color: #e2e8f0; }
+.selected-color.color-blue { background-color: #e0f2fe; color: #0284c7; border-color: #bae6fd; }
+.selected-color.color-red { background-color: #fee2e2; color: #dc2626; border-color: #fecaca; }
+.selected-color.color-yellow { background-color: #fef9c3; color: #ca8a04; border-color: #fef08a; }
+.selected-color.color-green { background-color: #dcfce7; color: #16a34a; border-color: #bbf7d0; }
+.selected-color.color-pink { background-color: #fce7f3; color: #db2777; border-color: #fbcfe8; }
+.selected-color.color-purple { background-color: #f3e8ff; color: #9333ea; border-color: #e9d5ff; }
+.selected-color.color-cyan { background-color: #cffafe; color: #0891b2; border-color: #a5f3fc; }
+.selected-color.color-orange { background-color: #ffedd5; color: #ea580c; border-color: #fed7aa; }
 .group-card ul {
   list-style: none;
   padding: 0;
