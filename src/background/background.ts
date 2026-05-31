@@ -55,6 +55,20 @@ async function updateState(partialState: Partial<AppState>) {
   chrome.runtime.sendMessage({ type: 'STATE_UPDATED', state: newState }).catch(() => {});
 }
 
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: "reportBug",
+    title: "バグ報告・機能要望 (GitHub)",
+    contexts: ["action"] // 拡張機能のアイコン上での右クリックに表示
+  });
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "reportBug") {
+    chrome.tabs.create({ url: "https://github.com/sawarame/TabOrigami/issues" });
+  }
+});
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'GET_STATE') {
     getState().then(sendResponse);
