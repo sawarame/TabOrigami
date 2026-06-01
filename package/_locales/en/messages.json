@@ -3,6 +3,6 @@
     "message": "TabOrigami"
   },
   "extensionDescription": {
-    "message": "Organize cluttered browser tabs intelligently based on context using Gemini AI."
+    "message": "TabOrigami is a browser extension that uses Gemini AI to transform a cluttered tab bar into a structured, organized workspace. By analyzing the titles, URLs, and content of your open pages, it automatically groups them according to your preferred workflow style."
   }
 }

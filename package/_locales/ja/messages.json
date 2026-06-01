@@ -3,6 +3,6 @@
     "message": "TabOrigami"
   },
   "extensionDescription": {
-    "message": "Gemini AIを活用して、散らかったブラウザのタブを文脈に基づいて賢く整理します。"
+    "message": "TabOrigamiは、Gemini AIを活用して、混沌としたタブバーを整然としたワークスペースへと変えるブラウザ拡張機能です。開いているページのタイトル、URL、および内容をAIが解析し、あなたのワークフローに最適なスタイルで自動的に分類・グループ化します。"
   }
 }
