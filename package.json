@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "rimraf ./package/js && rimraf package.zip && npx webpack && (cd package && zip -r ../package.zip .)",
+    "generate-icons": "node generate_icons.js",
+    "generate-icons:dev": "node generate_icons.js --dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

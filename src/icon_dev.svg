@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Geminiをイメージした星のグラデーション（青〜紫〜水色） -->
+    <linearGradient id="geminiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#4285F4"/>
+      <stop offset="40%"  stop-color="#A259FF"/>
+      <stop offset="100%" stop-color="#00BCD4"/>
+    </linearGradient>
+    <!-- 折り紙の上面フォールド用グラデーション（青系） -->
+    <linearGradient id="topFoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#BAE6FD"/>
+      <stop offset="100%" stop-color="#38BDF8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景：白 -->
+  <rect width="128" height="128" rx="28" fill="#FFFFFF"/>
+
+  <!-- 折り紙ペーパープレーン（1.25倍に拡大） -->
+  <!-- 上面フォールド（明るい青系グラデーション） -->
+  <polygon points="12,70 64,82 114,26" fill="url(#topFoldGrad)" opacity="0.95"/>
+  <!-- 右翼フォールド（シャドウ、濃い青） -->
+  <polygon points="64,82 78,114 114,26" fill="#0284C7" opacity="0.75"/>
+
+  <!-- AI Sparkle（Geminiグラデーションの星、大きめ） -->
+  <path d="M 90,10 L 93.5,22 L 106,26 L 93.5,30 L 90,42 L 86.5,30 L 74,26 L 86.5,22 Z"
+        fill="url(#geminiGrad)"/>
+
+  <!-- DEVバッジ (右下) -->
+  <g transform="translate(58, 86)">
+    <rect width="60" height="32" rx="8" fill="#6BCB77"/>
+    <text x="30" y="16" fill="white" font-size="15" font-weight="bold" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle" dominant-baseline="central">DEV</text>
+  </g>
+</svg>
