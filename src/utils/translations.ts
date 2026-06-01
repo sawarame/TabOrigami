@@ -15,8 +15,10 @@ export const translations = {
     close: '閉じる',
     settings: '設定',
     keepLabel: '維持（閉じません）',
+    dragHint: 'ドラッグして並び替え・移動',
     missingApiKeyTitle: 'APIキーが必要です',
     missingApiKeyDescription: 'Google AI Studio で APIキーを取得し、設定画面で入力してください。',
+    back: '戻る',
     // Styles
     styleAuto: 'おまかせ',
     styleTask: 'タスク集中',
@@ -33,9 +35,10 @@ export const translations = {
     languageLabel: '表示言語 (Language):',
     helpApiKey: 'APIキーをお持ちでない場合は、Google AI Studio で無料で作成できます。',
     excludePinnedLabel: '固定されたタブを整理の対象外にする',
+    reportBug: 'バグ報告・機能要望 (GitHub)',
     // Background / AI
     aiSystemInstruction: 'あなたはブラウザのタブを整理する専門家です。与えられたタブのリストを、指定されたスタイルに従ってJSON配列形式で分類してください。返却はJSON配列のみとし、説明文やMarkdownの装飾は一切含めないでください。形式: [{ "groupName": "グループ名", "tabIds": [1, 2, ...] }]',
-    aiStyleAuto: 'タブのタイトルとURLから、最適なグループ名を考えて分類してください。',
+    aiStyleAuto: 'タブのタイトル、URL、およびページの内容から、最適なグループ名を考えて分類してください。',
     aiStyleTask: 'タブを「現在進行中のメインタスク（調査・開発）」、「リファレンス（後で読む資料）」、「無関係なノイズ（SNSや動画）」の3つのグループに分類してください。',
     aiStyleWorkLife: 'タブを「仕事・開発関連」と「趣味・プライベート関連」の2つのグループに分類してください。',
     aiStyleTriage: '「保存すべき重要タブ」と「閉じてよさそうな不要なタブ」の2つのグループに分類してください。不要なタブのグループ名は「断捨離」としてください。',
@@ -44,7 +47,19 @@ export const translations = {
     aiPromptHeader: '以下のタブを分類ルールに従って分類し、JSON配列で返してください。',
     aiRuleHeader: '【共通ルール】',
     aiStyleHeader: '【スタイル別ルール: {style}】',
-    aiTabListHeader: '【タブリスト】'
+    aiTabListHeader: '【タブリスト】',
+    noDanshariTabs: '断捨離対象のタブはありませんでした。',
+    // Colors
+    colorAuto: '色を選択 (自動)',
+    colorGrey: 'グレー',
+    colorBlue: 'ブルー',
+    colorRed: 'レッド',
+    colorYellow: 'イエロー',
+    colorGreen: 'グリーン',
+    colorPink: 'ピンク',
+    colorPurple: 'パープル',
+    colorCyan: 'シアン',
+    colorOrange: 'オレンジ',
   },
   en: {
     // Popup
@@ -60,8 +75,10 @@ export const translations = {
     close: 'Close',
     settings: 'Settings',
     keepLabel: 'Keep (Won\'t close)',
+    dragHint: 'Drag to reorder or move',
     missingApiKeyTitle: 'API Key Required',
     missingApiKeyDescription: 'Please obtain an API key from Google AI Studio and enter it in the settings.',
+    back: 'Back',
     // Styles
     styleAuto: 'Auto',
     styleTask: 'Task Focus',
@@ -78,9 +95,10 @@ export const translations = {
     languageLabel: 'Language:',
     helpApiKey: 'If you don\'t have an API key, you can create one for free at Google AI Studio.',
     excludePinnedLabel: 'Exclude pinned tabs from organization',
+    reportBug: 'Report a Bug / Request Feature (GitHub)',
     // Background / AI
     aiSystemInstruction: 'You are an expert at organizing browser tabs. Classify the given list of tabs into a JSON array format according to the specified style. Return only the JSON array, without any explanation or Markdown decoration. Format: [{ "groupName": "Group Name", "tabIds": [1, 2, ...] }]',
-    aiStyleAuto: 'Create optimal group names based on tab titles and URLs.',
+    aiStyleAuto: 'Create optimal group names based on tab titles, URLs, and page contents.',
     aiStyleTask: 'Classify tabs into three groups: "Active Main Task (Research/Dev)", "Reference (Read later)", and "Irrelevant Noise (SNS/Video)".',
     aiStyleWorkLife: 'Classify tabs into two groups: "Work/Development" and "Personal/Private".',
     aiStyleTriage: 'Classify tabs into two groups: "Important Tabs to Keep" and "Unnecessary Tabs to Close". The name for the unnecessary tabs group should be "Cleanup".',
@@ -89,7 +107,19 @@ export const translations = {
     aiPromptHeader: 'Please classify the following tabs according to the rules and return as a JSON array.',
     aiRuleHeader: '[Common Rules]',
     aiStyleHeader: '[Style Rules: {style}]',
-    aiTabListHeader: '[Tab List]'
+    aiTabListHeader: '[Tab List]',
+    noDanshariTabs: 'There were no tabs subject to decluttering.',
+    // Colors
+    colorAuto: 'Select Color (Auto)',
+    colorGrey: 'Grey',
+    colorBlue: 'Blue',
+    colorRed: 'Red',
+    colorYellow: 'Yellow',
+    colorGreen: 'Green',
+    colorPink: 'Pink',
+    colorPurple: 'Purple',
+    colorCyan: 'Cyan',
+    colorOrange: 'Orange',
   }
 };
 

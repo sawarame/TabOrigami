@@ -1,9 +1,24 @@
 <template>
-  <div class="options-container">
-    <h1>
-      <Settings class="title-icon" :size="24" />
-      {{ t('optionsTitle') }}
-    </h1>
+  <div :class="['options-container', { 'is-popup': isPopup }]">
+    <header class="options-header">
+      <div class="header-left">
+        <button v-if="isPopup" @click="emit('close')" class="btn-back" :title="t('back')">
+          <ArrowLeft :size="20" />
+        </button>
+        <Settings v-else class="title-icon" :size="24" />
+        <h1>{{ isPopup ? t('settings') : t('optionsTitle') }}</h1>
+      </div>
+      <div class="header-right">
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="header-link" title="Google AI Studio">
+          AI Studio <ExternalLink :size="14" />
+        </a>
+        <button @click="save" class="btn-save" :disabled="!isDirty" :class="{ 'btn-saved': saved }">
+          <Save v-if="!saved" :size="16" />
+          <Check v-else :size="16" />
+          {{ t('save') }}
+        </button>
+      </div>
+    </header>
     <section>
       <h2>
         <Key class="section-icon" :size="20" />
@@ -65,30 +80,30 @@
         </label>
       </div>
 
-      <div class="actions">
-        <button @click="save" class="btn-save">
-          <Save :size="18" />
-          {{ t('save') }}
-        </button>
-        <span v-if="saved" class="status-msg">
-          <Check :size="18" />
-          {{ t('saved') }}
-        </span>
+      <div class="field help-section">
+        <a href="https://github.com/sawarame/TabOrigami/issues" target="_blank" class="help-link">
+          <Bug :size="16" /> {{ t('reportBug') }} <ExternalLink :size="14" />
+        </a>
       </div>
 
-      <p class="help">
-        <ExternalLink :size="14" />
-        <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>
-      </p>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { Settings, Key, Eye, EyeOff, RotateCcw, Languages, Save, Check, ExternalLink } from '@lucide/vue';
+import { ref, onMounted, computed } from 'vue';
+import { Settings, Key, Eye, EyeOff, RotateCcw, Languages, Save, Check, ExternalLink, ArrowLeft, Bug } from '@lucide/vue';
 import { OrigamiLanguage } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
+
+const props = defineProps({
+  isPopup: {
+    type: Boolean,
+    default: false
+  }
+});
+
+const emit = defineEmits(['close']);
 
 const apiKey = ref('');
 const showApiKey = ref(false);
@@ -96,6 +111,20 @@ const modelName = ref('gemini-3.1-flash-lite');
 const language = ref<OrigamiLanguage>('ja');
 const excludePinnedTabs = ref(false);
 const saved = ref(false);
+
+const originalState = ref({
+  apiKey: '',
+  modelName: 'gemini-3.1-flash-lite',
+  language: 'ja' as OrigamiLanguage,
+  excludePinnedTabs: false
+});
+
+const isDirty = computed(() => {
+  return apiKey.value !== originalState.value.apiKey ||
+         modelName.value !== originalState.value.modelName ||
+         language.value !== originalState.value.language ||
+         excludePinnedTabs.value !== originalState.value.excludePinnedTabs;
+});
 
 const t = (key: TranslationKey) => getTranslation(language.value, key);
 
@@ -117,19 +146,34 @@ onMounted(async () => {
   if (typeof result.excludePinnedTabs === 'boolean') {
     excludePinnedTabs.value = result.excludePinnedTabs;
   }
+  
+  updateOriginalState();
 });
+
+const updateOriginalState = () => {
+  originalState.value = {
+    apiKey: apiKey.value,
+    modelName: modelName.value,
+    language: language.value,
+    excludePinnedTabs: excludePinnedTabs.value
+  };
+};
 
 const resetModel = () => {
   modelName.value = 'gemini-3.1-flash-lite';
 };
 
 const save = async () => {
+  if (!isDirty.value) return;
+
   await chrome.storage.local.set({ 
     geminiApiKey: apiKey.value,
     geminiModelName: modelName.value,
     language: language.value,
     excludePinnedTabs: excludePinnedTabs.value
   });
+  
+  updateOriginalState();
   
   // Backgroundの状態も更新
   const { appState } = await chrome.storage.local.get('appState');
@@ -154,15 +198,87 @@ const save = async () => {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   color: #1e293b;
 }
-h1 {
-  margin-top: 0;
-  font-size: 1.75rem;
+
+/* ポップアップ表示用のスタイル上書き */
+.options-container.is-popup {
+  margin: 0;
+  padding: 0;
+  box-shadow: none;
+  border-radius: 0;
+  max-width: none;
+}
+.options-header {
+  position: sticky;
+  top: -40px;
+  background-color: #ffffff;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 40px;
+  margin: -40px -40px 32px -40px;
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 16px 16px 0 0;
+}
+.is-popup .options-header {
+  top: -16px;
+  padding: 12px 16px;
+  margin: -16px -16px 24px -16px;
+  border-radius: 0;
+}
+.header-left {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.options-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #0f172a;
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 20px;
+}
+.is-popup .options-header h1 {
+  font-size: 1.1rem;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header-link {
+  font-size: 0.8rem;
+  color: #3498db;
+  text-decoration: none;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.header-link:hover {
+  text-decoration: underline;
+}
+.btn-saved {
+  background-color: #10b981 !important;
+}
+.btn-saved:hover {
+  background-color: #059669 !important;
+}
+.btn-back {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin-left: -8px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s;
+}
+.btn-back:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
 }
 .title-icon {
   color: #3498db;
@@ -274,51 +390,45 @@ input:focus, select:focus {
   width: auto;
   margin: 0;
 }
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: 40px;
-  padding-top: 24px;
-  border-top: 1px solid #e2e8f0;
-}
 .btn-save {
   background: #3498db;
   color: white;
   border: none;
-  padding: 12px 32px;
+  padding: 8px 16px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   transition: background 0.2s;
+  font-size: 0.85rem;
 }
-.btn-save:hover {
+.btn-save:hover:not(:disabled) {
   background: #2980b9;
 }
-.status-msg {
-  color: #10b981;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.9rem;
+.btn-save:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
-.help {
-  font-size: 0.85rem;
-  color: #94a3b8;
+.help-section {
   margin-top: 32px;
-  display: flex;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+.help-link {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-}
-.help a {
-  color: #3498db;
+  color: #64748b;
   text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
 }
-.help a:hover {
+.help-link:hover {
+  color: #3498db;
   text-decoration: underline;
 }
 </style>
