@@ -15,6 +15,28 @@ export interface TabInfo {
   favIconUrl?: string;
 }
 
+export interface TabHistoryItem {
+  id: string;
+  createdAt: number;
+  snapshot: TabSnapshot;
+}
+
+export interface TabSnapshot {
+  tabs: {
+    id?: number;
+    index: number;
+    groupId: number;
+    pinned: boolean;
+    url?: string;
+  }[];
+  groups: {
+    id: number;
+    title?: string;
+    color?: chrome.tabGroups.Color;
+    collapsed: boolean;
+  }[];
+}
+
 export interface AppState {
   status: OrigamiStatus;
   style?: OrigamiStyle;

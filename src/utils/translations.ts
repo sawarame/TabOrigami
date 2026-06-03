@@ -10,7 +10,7 @@ export const translations = {
     previewTitle: '整理のプレビュー',
     cancel: 'キャンセル',
     execute: '実行する',
-    undo: '直前の整理を元に戻す (Undo)',
+    undo: '整理前に戻す',
     unknownTab: '不明なタブ',
     close: '閉じる',
     settings: '設定',
@@ -19,6 +19,7 @@ export const translations = {
     missingApiKeyTitle: 'APIキーが必要です',
     missingApiKeyDescription: 'Google AI Studio で APIキーを取得し、設定画面で入力してください。',
     back: '戻る',
+    historyTitle: '整理履歴から復元',
     // Styles
     styleAuto: 'おまかせ',
     styleTask: 'タスク集中',
@@ -79,6 +80,7 @@ export const translations = {
     missingApiKeyTitle: 'API Key Required',
     missingApiKeyDescription: 'Please obtain an API key from Google AI Studio and enter it in the settings.',
     back: 'Back',
+    historyTitle: 'Restore from history',
     // Styles
     styleAuto: 'Auto',
     styleTask: 'Task Focus',

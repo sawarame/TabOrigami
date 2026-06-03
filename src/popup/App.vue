@@ -52,11 +52,25 @@
           <span class="label">{{ style.name }}</span>
         </button>
       </div>
-      <div v-if="hasUndo" class="undo-section">
-        <button @click="undo" class="btn-undo">
-          <RotateCcw :size="16" />
-          {{ t('undo') }}
+      <div v-if="tabHistory && tabHistory.length > 0" class="history-section">
+        <button @click="isHistoryOpen = !isHistoryOpen" class="history-toggle-btn">
+          <h3>
+            {{ t('historyTitle') }}
+            <ChevronDown :class="{ 'rotate-180': isHistoryOpen }" :size="16" />
+          </h3>
         </button>
+        <ul v-show="isHistoryOpen" class="history-list">
+          <li v-for="item in tabHistory" :key="item.id" class="history-item">
+            <div class="history-info-container">
+              <span class="history-date">{{ formatDate(item.createdAt) }}</span>
+              <span class="history-info">{{ getHistoryInfo(item) }}</span>
+            </div>
+            <button @click="undo(item.id)" class="btn-undo btn-small" :title="t('undo')">
+              <RotateCcw :size="14" />
+              {{ t('undo') }}
+            </button>
+          </li>
+        </ul>
       </div>
     </div>
 
@@ -165,8 +179,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw, FileText, GripVertical } from '@lucide/vue';
-import { OrigamiStyle, AppState, OrigamiLanguage, ClassificationResult } from '../types';
+import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw, FileText, GripVertical, ChevronDown } from '@lucide/vue';
+import { OrigamiStyle, AppState, OrigamiLanguage, ClassificationResult, TabHistoryItem } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
 import OptionsView from '../options/Options.vue';
 
@@ -191,7 +205,8 @@ const styles = computed(() => [
 ]);
 
 const allTabs = ref<chrome.tabs.Tab[]>([]);
-const hasUndo = ref(false);
+const tabHistory = ref<TabHistoryItem[]>([]);
+const isHistoryOpen = ref(false);
 
 const loadingMessage = computed(() => {
   if (appState.value.status === 'analyzing') return t('analyzing');
@@ -266,8 +281,20 @@ onMounted(async () => {
   }
   allTabs.value = tabs;
 
-  const { lastSnapshot } = await chrome.storage.local.get('lastSnapshot');
-  hasUndo.value = !!lastSnapshot;
+  const result = await chrome.storage.local.get(['tabHistory', 'lastSnapshot']);
+  const historyData = result.tabHistory as TabHistoryItem[] | undefined;
+  const lastSnapshot = result.lastSnapshot as any;
+
+  if (historyData && Array.isArray(historyData) && historyData.length > 0) {
+    tabHistory.value = historyData;
+  } else if (lastSnapshot) {
+    // 過去バージョンとの互換性
+    tabHistory.value = [{
+      id: 'legacy',
+      createdAt: Date.now(),
+      snapshot: lastSnapshot
+    }];
+  }
 
   // 状態更新のリスナー
   chrome.runtime.onMessage.addListener((message) => {
@@ -335,17 +362,33 @@ const execute = async () => {
   window.close();
 };
 
-const undo = async () => {
+const undo = async (historyId?: string) => {
   appState.value.status = 'executing';
   try {
-    await chrome.runtime.sendMessage({ type: 'UNDO' });
+    await chrome.runtime.sendMessage({ type: 'UNDO', historyId });
     allTabs.value = await chrome.runtime.sendMessage({ type: 'GET_TABS' });
-    hasUndo.value = false;
+    const { tabHistory: updatedHistory } = await chrome.storage.local.get('tabHistory');
+    tabHistory.value = (updatedHistory as TabHistoryItem[]) || [];
   } catch (e) {
     alert('Undo failed.');
   } finally {
     appState.value.status = 'idle';
   }
+};
+
+const formatDate = (timestamp: number) => {
+  return new Intl.DateTimeFormat(appState.value.language === 'ja' ? 'ja-JP' : 'en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(timestamp));
+};
+
+const getHistoryInfo = (item: TabHistoryItem) => {
+  // 古い形式の互換性も考慮
+  const tabCount = Array.isArray(item.snapshot) ? item.snapshot.length : (item.snapshot.tabs?.length || 0);
+  return appState.value.language === 'ja' ? `${tabCount}個のタブ` : `${tabCount} tabs`;
 };
 
 const getProgressWidth = (progress: { current: number; total: number } | undefined) => {
@@ -962,18 +1005,78 @@ button {
 .btn-secondary:hover {
   background: #e2e8f0;
 }
-.undo-section {
+.history-section {
   margin-top: 24px;
+}
+.history-toggle-btn {
+  background: none;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  padding: 8px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.history-toggle-btn h3 {
+  font-size: 0.9rem;
+  color: #475569;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.history-toggle-btn:hover h3 {
+  color: #334155;
+}
+.history-toggle-btn h3 > svg {
+  transition: transform 0.2s ease-in-out;
+}
+.rotate-180 {
+  transform: rotate(180deg);
+}
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.history-info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.history-date {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+.history-info {
+  font-size: 0.85rem;
+  color: #1e293b;
+  font-weight: 500;
 }
 .btn-undo {
   background: #f59e0b;
   color: white;
-  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   font-weight: 600;
+  padding: 6px 12px;
+  margin-top: 0;
 }
 .btn-undo:hover {
   background: #d97706;

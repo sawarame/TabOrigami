@@ -1,4 +1,4 @@
-import { ClassificationResult, OrigamiStyle, AppState, OrigamiLanguage } from '../types';
+import { ClassificationResult, OrigamiStyle, AppState, OrigamiLanguage, TabHistoryItem, TabSnapshot } from '../types';
 import { getTranslation } from '../utils/translations';
 
 const INITIAL_STATE: AppState = {
@@ -99,7 +99,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'UNDO') {
-    handleUndo().then(sendResponse);
+    handleUndo(message.historyId).then(sendResponse);
     return true;
   }
 });
@@ -291,22 +291,37 @@ async function handleExecuteOrganize(groups: ClassificationResult[]) {
       currentGroups = await chrome.tabGroups.query({ windowId: chrome.windows.WINDOW_ID_CURRENT });
     }
 
-    const snapshot = {
+    const snapshot: TabSnapshot = {
       tabs: currentTabs.map(t => ({
         id: t.id,
         index: t.index,
-        groupId: t.groupId,
+        groupId: t.groupId ?? -1,
         pinned: t.pinned,
         url: t.url
       })),
       groups: currentGroups.map(g => ({
         id: g.id,
         title: g.title,
-        color: g.color,
+        color: g.color as any,
         collapsed: g.collapsed
       }))
     };
-    await chrome.storage.local.set({ lastSnapshot: snapshot });
+
+    const historyResult = await chrome.storage.local.get('tabHistory');
+    const tabHistory = (historyResult.tabHistory as TabHistoryItem[]) || [];
+    const newItem: TabHistoryItem = {
+      id: Date.now().toString(),
+      createdAt: Date.now(),
+      snapshot: snapshot
+    };
+    
+    // 最新の10件を保存
+    tabHistory.unshift(newItem);
+    if (tabHistory.length > 10) {
+      tabHistory.pop();
+    }
+
+    await chrome.storage.local.set({ tabHistory });
 
     const currentTabIds = new Set(currentTabs.map(t => t.id));
 
@@ -336,10 +351,25 @@ async function handleExecuteOrganize(groups: ClassificationResult[]) {
   }
 }
 
-async function handleUndo() {
-  const result = await chrome.storage.local.get('lastSnapshot');
-  const snapshotData = result.lastSnapshot as any;
-  if (!snapshotData) return { success: false, error: 'No snapshot found' };
+async function handleUndo(historyId?: string) {
+  const result = await chrome.storage.local.get(['tabHistory', 'lastSnapshot']);
+  let snapshotData: any;
+  let tabHistory = (result.tabHistory as TabHistoryItem[]) || [];
+
+  if (historyId) {
+    const item = tabHistory.find(h => h.id === historyId);
+    if (!item) return { success: false, error: 'History item not found' };
+    snapshotData = item.snapshot;
+  } else {
+    // 互換性フォールバック
+    if (tabHistory.length > 0) {
+      snapshotData = tabHistory[0].snapshot;
+    } else if (result.lastSnapshot) {
+      snapshotData = result.lastSnapshot;
+    } else {
+      return { success: false, error: 'No snapshot found' };
+    }
+  }
   
   // 後方互換性のため、配列の場合は古い形式とみなす
   const isOldFormat = Array.isArray(snapshotData);
@@ -393,6 +423,13 @@ async function handleUndo() {
     }
   }
   
-  await chrome.storage.local.remove('lastSnapshot');
+  if (historyId) {
+    // 復元した履歴を削除する場合は以下を有効にする
+    // tabHistory = tabHistory.filter(h => h.id !== historyId);
+    // await chrome.storage.local.set({ tabHistory });
+  } else {
+    // 旧バージョンのlastSnapshotが使用された場合
+    await chrome.storage.local.remove('lastSnapshot');
+  }
   return { success: true };
 }
