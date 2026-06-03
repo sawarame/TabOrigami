@@ -6,6 +6,14 @@
       <stop offset="40%"  stop-color="#A259FF"/>
       <stop offset="100%" stop-color="#00BCD4"/>
     </linearGradient>
+    
+    <!-- AIをイメージした明るめのグラデーション背景 -->
+    <linearGradient id="aiBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#3B2A66"/> <!-- 少し明るめのディープパープル -->
+      <stop offset="50%"  stop-color="#253268"/> <!-- インディゴブルー -->
+      <stop offset="100%" stop-color="#164366"/> <!-- 深いシアンブルー -->
+    </linearGradient>
+
     <!-- 折り紙の上面フォールド用グラデーション（青系） -->
     <linearGradient id="topFoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%"   stop-color="#BAE6FD"/>
@@ -13,18 +21,20 @@
     </linearGradient>
   </defs>
 
-  <!-- 背景：白 -->
-  <rect width="128" height="128" rx="28" fill="#FFFFFF"/>
+  <!-- 背景：AIをイメージしたグラデーション -->
+  <rect width="128" height="128" rx="28" fill="url(#aiBgGrad)"/>
 
   <!-- 折り紙ペーパープレーン（1.25倍に拡大） -->
   <!-- 上面フォールド（明るい青系グラデーション） -->
   <polygon points="12,70 64,82 114,26" fill="url(#topFoldGrad)" opacity="0.95"/>
   <!-- 右翼フォールド（シャドウ、濃い青） -->
-  <polygon points="64,82 78,114 114,26" fill="#0284C7" opacity="0.75"/>
+  <polygon points="64,82 78,114 114,26" fill="#0284C7" opacity="0.85"/>
 
-  <!-- AI Sparkle（Geminiグラデーションの星、大きめ） -->
-  <path d="M 90,10 L 93.5,22 L 106,26 L 93.5,30 L 90,42 L 86.5,30 L 74,26 L 86.5,22 Z"
-        fill="url(#geminiGrad)"/>
+  <!-- AI Sparkle（Geminiグラデーションの星、メイン） -->
+  <path d="M 88,14 Q 88,30 104,30 Q 88,30 88,46 Q 88,30 72,30 Q 88,30 88,14 Z" fill="url(#geminiGrad)"/>
+  
+  <!-- AI Sparkle（Geminiグラデーションの星、サブ） -->
+  <path d="M 108,6 Q 108,12 114,12 Q 108,12 108,18 Q 108,12 102,12 Q 108,12 108,6 Z" fill="url(#geminiGrad)"/>
 
   <!-- DEVバッジ (右下) -->
   <g transform="translate(58, 86)">
