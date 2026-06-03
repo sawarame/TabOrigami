@@ -98,7 +98,14 @@
       >
         <div class="group-header">
           <h3>
-            {{ group.groupName }}
+            <input 
+              v-if="group.groupName !== cleanupGroupName"
+              type="text" 
+              v-model="group.groupName" 
+              class="group-name-input"
+              @change="saveState"
+            />
+            <span v-else>{{ group.groupName }}</span>
             <Trash2 v-if="group.groupName === cleanupGroupName" :size="16" class="trash-icon" />
           </h3>
           <div class="custom-color-select" v-if="group.groupName !== cleanupGroupName">
@@ -809,6 +816,29 @@ header h1 {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+}
+.group-name-input {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin-left: -4px;
+  transition: all 0.2s;
+  width: 100%;
+  font-family: inherit;
+}
+.group-name-input:hover {
+  background: #f1f5f9;
+}
+.group-name-input:focus {
+  outline: none;
+  border-color: #3498db;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 .custom-color-select {
   position: relative;
