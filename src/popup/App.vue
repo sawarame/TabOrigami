@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <div v-show="currentView === 'main'">
+    <div v-show="currentView === 'main'" class="main-content">
       <header>
         <h1>{{ t('title') }}</h1>
         <button @click="openOptions" class="btn-settings" :title="t('settings')">
@@ -53,24 +53,12 @@
         </button>
       </div>
       <div v-if="tabHistory && tabHistory.length > 0" class="history-section">
-        <button @click="isHistoryOpen = !isHistoryOpen" class="history-toggle-btn">
+        <button @click="currentView = 'history'" class="history-toggle-btn">
           <h3>
+            <History :size="16" />
             {{ t('historyTitle') }}
-            <ChevronDown :class="{ 'rotate-180': isHistoryOpen }" :size="16" />
           </h3>
         </button>
-        <ul v-show="isHistoryOpen" class="history-list">
-          <li v-for="item in tabHistory" :key="item.id" class="history-item">
-            <div class="history-info-container">
-              <span class="history-date">{{ formatDate(item.createdAt) }}</span>
-              <span class="history-info">{{ getHistoryInfo(item) }}</span>
-            </div>
-            <button @click="undo(item.id)" class="btn-undo btn-small" :title="t('undo')">
-              <RotateCcw :size="14" />
-              {{ t('undo') }}
-            </button>
-          </li>
-        </ul>
       </div>
     </div>
 
@@ -180,18 +168,41 @@
     </div>
     </div>
     
+    <div v-if="currentView === 'history'" class="history-page">
+      <header class="history-header">
+        <button @click="currentView = 'main'" class="btn-back" :title="t('close')">
+          <ArrowLeft :size="20" />
+        </button>
+        <h1>{{ t('historyTitle') }}</h1>
+      </header>
+      <div class="history-content">
+        <ul class="history-list">
+          <li v-for="item in tabHistory" :key="item.id" class="history-item">
+            <div class="history-info-container">
+              <span class="history-date">{{ formatDate(item.createdAt) }}</span>
+              <span class="history-info">{{ getHistoryInfo(item) }}</span>
+            </div>
+            <button @click="undo(item.id)" class="btn-undo btn-small" :title="t('undo')">
+              <RotateCcw :size="14" />
+              {{ t('undo') }}
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+    
     <OptionsView v-if="currentView === 'options'" :isPopup="true" @close="currentView = 'main'" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw, FileText, GripVertical, ChevronDown } from '@lucide/vue';
+import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw, FileText, GripVertical, ChevronDown, History, ArrowLeft } from '@lucide/vue';
 import { OrigamiStyle, AppState, OrigamiLanguage, ClassificationResult, TabHistoryItem } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
 import OptionsView from '../options/Options.vue';
 
-const currentView = ref<'main' | 'options'>('main');
+const currentView = ref<'main' | 'options' | 'history'>('main');
 
 const appState = ref<AppState>({
   status: 'idle',
@@ -213,7 +224,6 @@ const styles = computed(() => [
 
 const allTabs = ref<chrome.tabs.Tab[]>([]);
 const tabHistory = ref<TabHistoryItem[]>([]);
-const isHistoryOpen = ref(false);
 
 const loadingMessage = computed(() => {
   if (appState.value.status === 'analyzing') return t('analyzing');
@@ -614,8 +624,10 @@ const moveTab = (
 .container {
   color: #1e293b;
   min-width: 320px;
-  padding: 16px;
   background-color: #ffffff;
+}
+.main-content {
+  padding: 16px;
 }
 header {
   display: flex;
@@ -1110,5 +1122,47 @@ button {
 }
 .btn-undo:hover {
   background: #d97706;
+}
+.btn-back {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin-left: -8px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s;
+}
+.btn-back:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+.history-page {
+  display: flex;
+  flex-direction: column;
+}
+.history-header {
+  position: sticky;
+  top: 0;
+  background-color: #ffffff;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.history-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1e293b;
+}
+.history-content {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
 }
 </style>
