@@ -119,10 +119,11 @@ async function startOrganizeTabs(style: OrigamiStyle) {
 async function handleOrganizeTabs(style: OrigamiStyle, lang: OrigamiLanguage): Promise<ClassificationResult[]> {
   const tabs = await chrome.tabs.query({ currentWindow: true });
 
-  const result = await chrome.storage.local.get(['geminiApiKey', 'geminiModelName', 'excludePinnedTabs']);
+  const result = await chrome.storage.local.get(['geminiApiKey', 'geminiModelName', 'excludePinnedTabs', 'customPrompt']);
   const geminiApiKey = typeof result.geminiApiKey === 'string' ? result.geminiApiKey.trim() : null;
   const modelName = typeof result.geminiModelName === 'string' ? result.geminiModelName.trim() : "gemini-3.1-flash-lite";
   const excludePinned = result.excludePinnedTabs === true;
+  const customPrompt = typeof result.customPrompt === 'string' ? result.customPrompt.trim() : null;
 
   let targetTabs = tabs;
   if (excludePinned) {
@@ -205,7 +206,7 @@ async function handleOrganizeTabs(style: OrigamiStyle, lang: OrigamiLanguage): P
   const aiMessage = lang === 'ja' ? 'AIがグループ構成を考案中...' : 'AI is organizing groups...';
   await updateState({ progress: { current: targetTabs.length, total: targetTabs.length, message: aiMessage } });
 
-  const prompt = constructPrompt(style, tabData, lang);
+  const prompt = constructPrompt(style, tabData, lang, customPrompt);
   const systemInstruction = getTranslation(lang, 'aiSystemInstruction');
 
   try {
@@ -235,9 +236,9 @@ async function handleOrganizeTabs(style: OrigamiStyle, lang: OrigamiLanguage): P
 
     const parsed = JSON.parse(text) as ClassificationResult[];
     if (style === 'triage') {
-      // 整理モードが断捨離の場合は、「断捨離」グループのみをプレビュー対象にする
+      // 整理モードが断捨離の場合は、閉じる対象のグループのみをプレビュー対象にする
       const cleanupGroupName = getTranslation(lang, 'aiDanshari');
-      return parsed.filter(g => g.groupName === cleanupGroupName);
+      return parsed.filter(g => g.action === 'close' || g.groupName.includes(cleanupGroupName));
     }
     return parsed;
   } catch (error) {
@@ -246,7 +247,7 @@ async function handleOrganizeTabs(style: OrigamiStyle, lang: OrigamiLanguage): P
   }
 }
 
-function constructPrompt(style: OrigamiStyle, tabs: any[], lang: OrigamiLanguage): string {
+function constructPrompt(style: OrigamiStyle, tabs: any[], lang: OrigamiLanguage, customPrompt?: string | null): string {
   const tabList = tabs.map(t => {
     let info = `ID:${t.id}, Title:${t.title}, URL:${t.url}`;
     if (t.description) {
@@ -264,6 +265,7 @@ function constructPrompt(style: OrigamiStyle, tabs: any[], lang: OrigamiLanguage
   }
 
   const commonInstruction = getTranslation(lang, 'aiCommonInstruction');
+  const customInstruction = customPrompt ? `\n\n${getTranslation(lang, 'aiCustomPromptHeader')}\n${customPrompt}` : '';
 
   return `${getTranslation(lang, 'aiPromptHeader')}
 
@@ -271,7 +273,7 @@ ${getTranslation(lang, 'aiRuleHeader')}
 ${commonInstruction}
 
 ${getTranslation(lang, 'aiStyleHeader').replace('{style}', style)}
-${styleInstruction}
+${styleInstruction}${customInstruction}
 
 ${getTranslation(lang, 'aiTabListHeader')}
 ${tabList}`;
@@ -330,7 +332,7 @@ async function handleExecuteOrganize(groups: ClassificationResult[]) {
       const validTabIds = group.tabIds.filter((id): id is number => typeof id === 'number' && currentTabIds.has(id));
       if (validTabIds.length === 0) continue;
 
-      if (group.groupName === cleanupGroupName) {
+      if (group.action === 'close' || group.groupName.includes(cleanupGroupName)) {
         await chrome.tabs.remove(validTabIds);
       } else if (state.style !== 'triage') {
         // 先にタブをウィンドウの末尾に移動させることで、プレビュー画面のグループ・タブの並び順をブラウザ上に反映する

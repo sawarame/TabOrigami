@@ -52,7 +52,16 @@
           <span class="label">{{ style.name }}</span>
         </button>
       </div>
-      <div v-if="tabHistory && tabHistory.length > 0" class="history-section">
+      <div class="custom-prompt-section" style="margin-top: 24px;">
+        <button @click="currentView = 'customPrompt'" class="history-toggle-btn">
+          <h3>
+            <FileText :size="16" />
+            {{ t('customPromptBtn') }}
+          </h3>
+        </button>
+      </div>
+
+      <div v-if="tabHistory && tabHistory.length > 0" class="history-section" style="margin-top: 16px;">
         <button @click="currentView = 'history'" class="history-toggle-btn">
           <h3>
             <History :size="16" />
@@ -87,16 +96,16 @@
         <div class="group-header">
           <h3>
             <input 
-              v-if="group.groupName !== cleanupGroupName"
+              v-if="!isCleanupGroup(group)"
               type="text" 
               v-model="group.groupName" 
               class="group-name-input"
               @change="saveState"
             />
             <span v-else>{{ group.groupName }}</span>
-            <Trash2 v-if="group.groupName === cleanupGroupName" :size="16" class="trash-icon" />
+            <Trash2 v-if="isCleanupGroup(group)" :size="16" class="trash-icon" />
           </h3>
-          <div class="custom-color-select" v-if="group.groupName !== cleanupGroupName">
+          <div class="custom-color-select" v-if="!isCleanupGroup(group)">
             <div 
               class="selected-color" 
               :class="`color-${group.color || 'default'}`"
@@ -190,6 +199,29 @@
         </ul>
       </div>
     </div>
+
+    <div v-if="currentView === 'customPrompt'" class="history-page">
+      <header class="history-header">
+        <button @click="currentView = 'main'" class="btn-back" :title="t('close')">
+          <ArrowLeft :size="20" />
+        </button>
+        <h1>{{ t('customPromptTitle') }}</h1>
+      </header>
+      <div class="history-content" style="padding: 16px;">
+        <textarea 
+          v-model="customPromptText" 
+          :placeholder="t('customPromptPlaceholder')" 
+          style="width: 100%; box-sizing: border-box; height: 120px; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: #fff; color: #333; resize: vertical; margin-bottom: 16px; font-family: inherit; font-size: 14px;"
+        ></textarea>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <button @click="saveCustomPrompt" class="btn-primary" :class="{ 'btn-saved': showSavedMessage }" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background-color 0.2s;">
+            <Save v-if="!showSavedMessage" :size="16" />
+            <Check v-else :size="16" />
+            {{ showSavedMessage ? t('saved') : t('save') }}
+          </button>
+        </div>
+      </div>
+    </div>
     
     <OptionsView v-if="currentView === 'options'" :isPopup="true" @close="currentView = 'main'" />
   </div>
@@ -197,12 +229,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw, FileText, GripVertical, ChevronDown, History, ArrowLeft } from '@lucide/vue';
+import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw, FileText, GripVertical, ChevronDown, History, ArrowLeft, Save, Check } from '@lucide/vue';
 import { OrigamiStyle, AppState, OrigamiLanguage, ClassificationResult, TabHistoryItem } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
 import OptionsView from '../options/Options.vue';
 
-const currentView = ref<'main' | 'options' | 'history'>('main');
+const currentView = ref<'main' | 'options' | 'history' | 'customPrompt'>('main');
 
 const appState = ref<AppState>({
   status: 'idle',
@@ -224,6 +256,8 @@ const styles = computed(() => [
 
 const allTabs = ref<chrome.tabs.Tab[]>([]);
 const tabHistory = ref<TabHistoryItem[]>([]);
+const customPromptText = ref('');
+const showSavedMessage = ref(false);
 
 const loadingMessage = computed(() => {
   if (appState.value.status === 'analyzing') return t('analyzing');
@@ -275,6 +309,10 @@ const closeColorDropdown = () => {
 
 const cleanupGroupName = computed(() => getTranslation(appState.value.language, 'aiDanshari'));
 
+const isCleanupGroup = (group: ClassificationResult) => {
+  return group.action === 'close' || (group.groupName && group.groupName.includes(cleanupGroupName.value));
+};
+
 const hasNoDanshariTabs = computed(() => {
   if (appState.value.style !== 'triage' || appState.value.status !== 'preview') return false;
   return appState.value.previewGroups.length === 0 || appState.value.previewGroups.every(g => g.tabIds.length === 0);
@@ -287,8 +325,11 @@ onMounted(async () => {
     chrome.runtime.sendMessage({ type: 'GET_TABS' })
   ]);
   
-  // ストレージから言語設定を取得して補完
-  const { language } = await chrome.storage.local.get('language');
+  // ストレージから言語設定等を取得して補完
+  const { language, customPrompt } = await chrome.storage.local.get(['language', 'customPrompt']);
+  if (typeof customPrompt === 'string') {
+    customPromptText.value = customPrompt;
+  }
   appState.value = { 
     ...state, 
     language: language || state.language || (chrome.i18n.getUILanguage().startsWith('ja') ? 'ja' : 'en')
@@ -359,6 +400,14 @@ const saveState = () => {
 
 const analyze = async (style: OrigamiStyle) => {
   await chrome.runtime.sendMessage({ type: 'ORGANIZE_TABS', style });
+};
+
+const saveCustomPrompt = async () => {
+  await chrome.storage.local.set({ customPrompt: customPromptText.value });
+  showSavedMessage.value = true;
+  setTimeout(() => {
+    showSavedMessage.value = false;
+  }, 2000);
 };
 
 const openOptions = () => {
@@ -1039,6 +1088,13 @@ button {
 }
 .btn-primary:hover {
   background: #2980b9;
+}
+.btn-saved {
+  background-color: #10b981 !important;
+  color: white !important;
+}
+.btn-saved:hover {
+  background-color: #059669 !important;
 }
 .btn-secondary {
   background: #f1f5f9;
