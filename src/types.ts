@@ -4,6 +4,7 @@ export type OrigamiLanguage = 'ja' | 'en';
 
 export interface ClassificationResult {
   groupName: string;
+  action?: 'keep' | 'close';
   tabIds: (number | undefined)[];
   color?: chrome.tabGroups.Color;
 }

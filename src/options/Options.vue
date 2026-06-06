@@ -19,6 +19,7 @@
         </button>
       </div>
     </header>
+    <div class="options-content">
     <section>
       <h2>
         <Key class="section-icon" :size="20" />
@@ -87,6 +88,7 @@
       </div>
 
     </section>
+    </div>
   </div>
 </template>
 
@@ -191,40 +193,40 @@ const save = async () => {
 <style scoped>
 .options-container {
   max-width: 600px;
-  margin: 40px auto;
+  margin: 0 auto;
   background: white;
-  padding: 40px;
-  border-radius: 16px;
+  border-radius: 0 0 16px 16px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   color: #1e293b;
+  min-height: 100vh;
+}
+.options-content {
+  padding: 32px 40px 40px;
 }
 
 /* ポップアップ表示用のスタイル上書き */
 .options-container.is-popup {
-  margin: 0;
-  padding: 0;
   box-shadow: none;
   border-radius: 0;
   max-width: none;
+  min-height: auto;
 }
 .options-header {
   position: sticky;
-  top: -40px;
+  top: 0;
   background-color: #ffffff;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 24px 40px;
-  margin: -40px -40px 32px -40px;
   border-bottom: 1px solid #e2e8f0;
-  border-radius: 16px 16px 0 0;
 }
 .is-popup .options-header {
-  top: -16px;
-  padding: 12px 16px;
-  margin: -16px -16px 24px -16px;
-  border-radius: 0;
+  padding: 16px;
+}
+.is-popup .options-content {
+  padding: 16px;
 }
 .header-left {
   display: flex;
