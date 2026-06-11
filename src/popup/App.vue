@@ -3,6 +3,9 @@
     <div v-show="currentView === 'main'" class="main-content">
       <header>
         <h1>{{ t('title') }}</h1>
+        <a href="https://sawara.me/tab-origami/getting-started" target="_blank" rel="noopener noreferrer" class="btn-help" :title="t('manual')">
+          <HelpCircle :size="20" />
+        </a>
         <button @click="openOptions" class="btn-settings" :title="t('settings')">
           <Settings :size="20" />
         </button>
@@ -229,7 +232,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw, FileText, GripVertical, ChevronDown, History, ArrowLeft, Save, Check } from '@lucide/vue';
+import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw, FileText, GripVertical, ChevronDown, History, ArrowLeft, Save, Check, HelpCircle } from '@lucide/vue';
 import { OrigamiStyle, AppState, OrigamiLanguage, ClassificationResult, TabHistoryItem } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
 import OptionsView from '../options/Options.vue';
@@ -724,6 +727,23 @@ header h1 {
 .btn-settings:hover {
   color: #1e293b;
   transform: rotate(30deg);
+}
+.btn-help {
+  position: absolute;
+  right: 32px;
+  background: transparent;
+  padding: 4px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, transform 0.2s;
+  border: none;
+  cursor: pointer;
+}
+.btn-help:hover {
+  color: #1e293b;
+  transform: scale(1.1);
 }
 .description {
   font-size: 0.9rem;
