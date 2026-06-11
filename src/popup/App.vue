@@ -228,7 +228,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { Settings, Sparkles, Layout, Workflow, Trash2, RotateCcw, FileText, GripVertical, ChevronDown, History, ArrowLeft, Save, Check } from '@lucide/vue';
 import { OrigamiStyle, AppState, OrigamiLanguage, ClassificationResult, TabHistoryItem } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
@@ -365,6 +365,23 @@ onMounted(async () => {
       }
     }
   });
+
+  // 設定の変更（言語設定など）を監視してリアルタイムに反映
+  chrome.storage.onChanged.addListener(handleStorageChange);
+});
+
+// ストレージ変更イベントのハンドラ
+const handleStorageChange = (
+  changes: { [key: string]: chrome.storage.StorageChange },
+  areaName: string
+) => {
+  if (areaName === 'local' && changes.language) {
+    appState.value.language = changes.language.newValue as OrigamiLanguage;
+  }
+};
+
+onUnmounted(() => {
+  chrome.storage.onChanged.removeListener(handleStorageChange);
 });
 
 const getTabTitle = (id: number | undefined) => {
