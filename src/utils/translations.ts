@@ -23,6 +23,7 @@ export const translations = {
     customPromptBtn: '独自プロンプトを追加',
     customPromptTitle: '独自プロンプトを追加',
     customPromptPlaceholder: 'AIへの追加の指示を入力してください（例: 英語のタブと日本語のタブを分けて）',
+    manual: '使い方ガイド',
     // Styles
     styleAuto: 'おまかせ',
     styleTask: 'タスク集中',
@@ -46,7 +47,7 @@ export const translations = {
     aiStyleTask: 'タブを「現在進行中のメインタスク（調査・開発）」、「リファレンス（後で読む資料）」、「無関係なノイズ（SNSや動画）」の3つのグループに分類してください。',
     aiStyleWorkLife: 'タブを「仕事・開発関連」と「趣味・プライベート関連」の2つのグループに分類してください。',
     aiStyleTriage: '「保存すべき重要タブ」と「閉じてよさそうな不要なタブ」の2つのグループに分類してください。閉じてよい不要なタブのグループには "action": "close" を、保存するグループには "action": "keep" を指定してください。不要なタブのグループ名はデフォルトで「断捨離」としますが、ユーザーの追加指示があればそちらを優先してください。',
-    aiCommonInstruction: '- 「新しいタブ」ページ（Titleが"New Tab"や"新しいタブ"のもの、またはURLが"chrome://newtab/"のもの）は、一律で「断捨離」というグループ名に分類し、"action": "close" を指定してください。これらは実行時に自動的に閉じられます。\n- 同じドメイン（ホスト名）のタブは、可能な限り同じグループにまとめるか、連続したグループになるように整理してください。',
+    aiCommonInstruction: '- 「新しいタブ」ページ（Titleが"New Tab"や"新しいタブ"のもの、またはURLが"chrome://newtab/"のもの）は、一律で「断捨離」というグループ名に分類し、"action": "close" を指定してください。これらは実行時に自動的に閉じられます。\n- 同じタブグループの中の同じドメイン（ホスト名）のタブは、可能な限り連続した並び順になるように整理してください。',
     aiDanshari: '断捨離',
     aiPromptHeader: '以下のタブを分類ルールに従って分類し、JSON配列で返してください。',
     aiRuleHeader: '【共通ルール】',
@@ -88,6 +89,7 @@ export const translations = {
     customPromptBtn: 'Add Custom Prompt',
     customPromptTitle: 'Add Custom Prompt',
     customPromptPlaceholder: 'Enter additional instructions for AI (e.g., Separate English and Japanese tabs)',
+    manual: 'User Manual',
     // Styles
     styleAuto: 'Auto',
     styleTask: 'Task Focus',
@@ -111,7 +113,7 @@ export const translations = {
     aiStyleTask: 'Classify tabs into three groups: "Active Main Task (Research/Dev)", "Reference (Read later)", and "Irrelevant Noise (SNS/Video)".',
     aiStyleWorkLife: 'Classify tabs into two groups: "Work/Development" and "Personal/Private".',
     aiStyleTriage: 'Classify tabs into two groups: "Important Tabs to Keep" and "Unnecessary Tabs to Close". For the unnecessary tabs, set "action": "close", and for tabs to keep, set "action": "keep". The name for the unnecessary tabs group should default to "Cleanup", but prioritize any custom user instructions.',
-    aiCommonInstruction: '- "New Tab" pages (Title is "New Tab" or URL is "chrome://newtab/") should always be classified into a group named "Cleanup" with "action": "close". These will be automatically closed.\n- Tabs from the same domain (hostname) should be grouped together or placed in consecutive groups as much as possible.',
+    aiCommonInstruction: '- "New Tab" pages (Title is "New Tab" or URL is "chrome://newtab/") should always be classified into a group named "Cleanup" with "action": "close". These will be automatically closed.\n- Within the same tab group, tabs with the same domain (hostname) should be ordered consecutively as much as possible.',
     aiDanshari: 'Cleanup',
     aiPromptHeader: 'Please classify the following tabs according to the rules and return as a JSON array.',
     aiRuleHeader: '[Common Rules]',
