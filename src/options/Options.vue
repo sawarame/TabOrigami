@@ -58,7 +58,7 @@
           </button>
         </div>
         <p class="hint">
-          {{ language === 'ja' ? '推奨:' : 'Recommended:' }} 
+          {{ originalState.language === 'ja' ? '推奨:' : 'Recommended:' }} 
           <code>gemini-2.5-flash</code>, <code>gemini-3.5-flash</code>, <code>gemini-flash-latest</code>
         </p>
       </div>
@@ -128,7 +128,7 @@ const isDirty = computed(() => {
          excludePinnedTabs.value !== originalState.value.excludePinnedTabs;
 });
 
-const t = (key: TranslationKey) => getTranslation(language.value, key);
+const t = (key: TranslationKey) => getTranslation(originalState.value.language, key);
 
 onMounted(async () => {
   const result = await chrome.storage.local.get(['geminiApiKey', 'geminiModelName', 'language', 'excludePinnedTabs']);
